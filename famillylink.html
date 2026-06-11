@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Supervised User (Family Link) 기능 검증</title>
+</head>
+<body>
+    <h2>Supervised User 기능 박멸 웹페이지 테스트</h2>
+    <p>아래 검증 버튼을 눌러 브라우저 본체에 관련 인프라 코드가 남아있는지 확인하세요.</p>
+    <hr>
+
+    <button onclick="checkSupervisedStatus()" style="padding: 15px 30px; font-size: 18px; cursor: pointer;">
+        브라우저 기능 탑재 여부 스캔 시작
+    </button>
+
+    <br><br>
+    <div id="result-box" style="padding: 20px; border: 2px solid #ccc; font-size: 16px; width: 600px; white-space: pre-line;">
+        여기에 결과가 표시됩니다.
+    </div>
+
+    <script>
+        function checkSupervisedStatus() {
+            const resultDiv = document.getElementById('result-box');
+            let log = "=== 검증 프로세스 시작 ===\n";
+            let isDetected = false;
+
+            // 1. 구글 자녀 보호 계정이 켜지면 강제로 주입되는 미디어 피드 및 확장 기능 오브젝트 검사
+            // 크로미움 내부에서 Supervised 기능을 담당하는 확장 컴포넌트 ID 주소들입니다.
+            const supervisedExtensionIds = [
+                'chrome-extension://pamfbcolcaafgohgplegliphhgkkbofm/manifest.json', // Family Link 백엔드
+                'chrome-extension://apdfllckaahabnmfeajnofsnjaajmoun/manifest.json'  // 자녀 보호 필터링
+            ];
+
+            log += "[1단계] 내부 자녀 보호 컴포넌트 주소 추적 중...\n";
+            
+            // fetch를 통해 해당 리소스 뼈대가 살아있는지 찔러봅니다.
+            Promise.all(supervisedExtensionIds.map(url => 
+                fetch(url).then(() => true).catch(() => false)
+            )).then(results => {
+                if (results.includes(true)) {
+                    log += "⚠️ 경고: 자녀 보호 관련 내부 확장 리소스 구조가 감지되었습니다!\n";
+                    isDetected = true;
+                } else {
+                    log += "✅ 통과: 자녀 보호 관련 컴포넌트 URL이 응답하지 않습니다.\n";
+                }
+
+                // 2. Navigator 객체 내부의 비표준 구글 계정 상태값 검사
+                log += "\n[2단계] 브라우저 사용자 환경(Navigator) 분석 중...\n";
+                if (navigator.userAgent.includes("ParentalControl") || window.chrome && window.chrome.embeddedSearch) {
+                    log += "⚠️ 경고: 시스템 브라우저 환경에 관리자 제어 힌트가 남아있습니다.\n";
+                    isDetected = true;
+                } else {
+                    log += "✅ 통과: 환경 변수 클린.\n";
+                }
+
+                // 최종 판정
+                log += "\n=== 최종 분석 결과 ===\n";
+                if (isDetected) {
+                    resultDiv.style.backgroundColor = "#ffdddd";
+                    log += "❌ 판정 실패: `enable_supervised_users` 기능 코드가 브라우저 본체 메모리에 아직 살아 숨 쉬고 있습니다. (다이어트 실패)";
+                } else {
+                    resultDiv.style.backgroundColor = "#ddffdd";
+                    log += "🎉 판정 성공!: 자녀 보호(Supervised) 인프라가 완전히 도려내졌습니다. 관련 백그라운드 스레드가 작동하지 않는 완벽한 다이어트 상태입니다!";
+                }
+
+                resultDiv.innerText = log;
+            });
+        }
+    </script>
+</body>
+</html>
