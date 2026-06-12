@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Speech Service Test</title>
+<style>
+  body { font-family: monospace; padding: 20px; background: #1e1e1e; color: #d4d4d4; }
+  h2 { color: #9cdcfe; }
+  .ok   { color: #4ec9b0; }
+  .fail { color: #f44747; }
+  .warn { color: #dcdcaa; }
+  button { margin: 6px 4px; padding: 8px 16px; background: #3a3d41; color: #d4d4d4; border: 1px solid #555; cursor: pointer; }
+  button:hover { background: #505357; }
+  #log { margin-top: 12px; padding: 10px; background: #252526; border: 1px solid #444; min-height: 80px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<h2>Speech Service Feature Test</h2>
+
+<h3>1. API 존재 여부</h3>
+<div id="api-check"></div>
+
+<h3>2. 음성인식 실행 테스트</h3>
+<button onclick="startRecognition()">마이크 음성인식 시작</button>
+<button onclick="stopRecognition()">중지</button>
+<div id="log">대기 중...</div>
+
+<script>
+const log = document.getElementById('log');
+const apiDiv = document.getElementById('api-check');
+let recognition = null;
+
+function append(msg, cls) {
+  const line = document.createElement('div');
+  line.className = cls || '';
+  line.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+  log.appendChild(line);
+}
+
+// 1. API 존재 여부 확인
+(function checkAPIs() {
+  const apis = [
+    ['SpeechRecognition', window.SpeechRecognition],
+    ['webkitSpeechRecognition', window.webkitSpeechRecognition],
+    ['SpeechSynthesis', window.speechSynthesis],
+  ];
+  apis.forEach(([name, val]) => {
+    const d = document.createElement('div');
+    if (val) {
+      d.className = 'ok';
+      d.textContent = '✔ ' + name + ' — 존재함';
+    } else {
+      d.className = 'fail';
+      d.textContent = '✘ ' + name + ' — 없음 (disabled)';
+    }
+    apiDiv.appendChild(d);
+  });
+})();
+
+// 2. 실제 음성인식 실행
+function startRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    append('SpeechRecognition API 자체가 없음 → enable_speech_service=false 효과 확인됨', 'fail');
+    return;
+  }
+  try {
+    recognition = new SR();
+    recognition.lang = 'ko-KR';
+    recognition.interimResults = true;
+    recognition.onstart  = () => append('onstart: 음성인식 시작됨', 'ok');
+    recognition.onresult = (e) => {
+      const t = e.results[e.results.length - 1][0].transcript;
+      append('onresult: ' + t, 'ok');
+    };
+    recognition.onerror  = (e) => append('onerror: ' + e.error, 'fail');
+    recognition.onend    = () => append('onend: 종료', 'warn');
+    recognition.start();
+    append('recognition.start() 호출됨 — 서비스 연결 시도 중...', 'warn');
+  } catch(e) {
+    append('예외 발생: ' + e.message, 'fail');
+  }
+}
+
+function stopRecognition() {
+  if (recognition) { recognition.stop(); recognition = null; }
+}
+</script>
+</body>
+</html>
