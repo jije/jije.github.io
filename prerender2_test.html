@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Prerender2 Test</title>
+<style>
+  body { font-family: monospace; padding: 20px; background: #111; color: #eee; }
+  h2 { color: #0af; }
+  .result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+  .ok  { background: #1a3a1a; border-left: 4px solid #4f4; }
+  .ng  { background: #3a1a1a; border-left: 4px solid #f44; }
+  .info { background: #1a2a3a; border-left: 4px solid #4af; }
+  button { margin: 6px 4px; padding: 8px 16px; cursor: pointer;
+           background: #0af; color: #000; border: none; border-radius: 4px; font-size: 14px; }
+  button:hover { background: #08c; }
+  #log { margin-top: 20px; white-space: pre; font-size: 13px; color: #ccc; }
+  a { color: #0af; }
+</style>
+</head>
+<body>
+
+<h2>Prerender2 Test</h2>
+
+<!-- 1. Speculation Rules API 지원 여부 -->
+<div id="spec-support" class="result info">Speculation Rules API: 확인 중...</div>
+
+<!-- 2. Prerender 활성화 여부 (document.prerendering) -->
+<div id="prerender-state" class="result info">현재 페이지 prerender 상태: 확인 중...</div>
+
+<!-- 3. Prerender 트리거 테스트 -->
+<div class="result info">
+  <b>테스트 방법:</b><br>
+  1. 아래 버튼으로 speculation rules 삽입 → target 페이지를 prerender 시도<br>
+  2. chrome://process-internals 또는 아래 링크 클릭 시 로딩 시간으로 판단<br>
+  3. Prerender2 disabled 시: speculation rules 있어도 prerender 안 됨
+</div>
+
+<button onclick="injectSpeculationRules()">Speculation Rules 삽입</button>
+<button onclick="checkProcesses()">Prerender 상태 확인</button>
+<button onclick="navigateToTarget()">Target 페이지로 이동</button>
+<button onclick="clearLog()">로그 초기화</button>
+
+<div id="log"></div>
+
+<!-- Target 링크 (speculation rules가 이 링크를 prerender 대상으로 지정) -->
+<a id="target-link" href="prerender2_target.html">→ Prerender 대상 페이지</a>
+
+<script>
+const log = document.getElementById('log');
+
+function addLog(msg, type = '') {
+  const time = new Date().toLocaleTimeString('ko-KR', { hour12: false });
+  log.textContent += `[${time}] ${msg}\n`;
+}
+
+function clearLog() {
+  log.textContent = '';
+}
+
+// 1. Speculation Rules API 지원 여부 확인
+function checkSpeculationRulesSupport() {
+  const el = document.getElementById('spec-support');
+  if (HTMLScriptElement.supports && HTMLScriptElement.supports('speculationrules')) {
+    el.className = 'result ok';
+    el.textContent = 'Speculation Rules API: 지원됨 ✓';
+    addLog('Speculation Rules API 지원됨');
+  } else {
+    el.className = 'result ng';
+    el.textContent = 'Speculation Rules API: 미지원 ✗ (Prerender2 disabled 또는 구버전 브라우저)';
+    addLog('Speculation Rules API 미지원 → Prerender2 비활성화 상태');
+  }
+}
+
+// 2. 현재 페이지가 prerendering 중인지
+function checkPrerenderState() {
+  const el = document.getElementById('prerender-state');
+  if (document.prerendering) {
+    el.className = 'result ng';
+    el.textContent = '현재 페이지: prerendering 중 (숨겨진 상태로 로딩됨)';
+    addLog('이 페이지는 prerender 중');
+  } else {
+    el.className = 'result ok';
+    el.textContent = '현재 페이지: 일반 로딩 (prerender 아님) ✓';
+    addLog('일반 페이지 로딩 (prerender 아님)');
+  }
+}
+
+// 3. Speculation Rules 삽입
+function injectSpeculationRules() {
+  const existing = document.getElementById('spec-rules');
+  if (existing) {
+    addLog('이미 삽입됨');
+    return;
+  }
+
+  const script = document.createElement('script');
+  script.id = 'spec-rules';
+  script.type = 'speculationrules';
+  script.textContent = JSON.stringify({
+    prerender: [{
+      source: 'list',
+      urls: ['prerender2_target.html']
+    }]
+  });
+  document.head.appendChild(script);
+
+  addLog('Speculation Rules 삽입 완료 → prerender2_target.html 대상 지정');
+  addLog('→ Prerender2 활성화 시: 백그라운드에서 target 페이지 렌더링 시작');
+  addLog('→ Prerender2 비활성화 시: 아무 일도 안 일어남');
+  addLog('약 1~2초 후 "Prerender 상태 확인" 버튼 눌러보세요');
+}
+
+// 4. Prerender 상태 확인 (PerformanceObserver 기반)
+function checkProcesses() {
+  addLog('--- Prerender 상태 확인 ---');
+
+  // speculation rules 삽입 여부
+  const hasRules = !!document.getElementById('spec-rules');
+  addLog(`Speculation Rules 삽입: ${hasRules ? '됨' : '안됨'}`);
+
+  // Navigation Timing으로 간접 확인
+  const nav = performance.getEntriesByType('navigation')[0];
+  if (nav) {
+    addLog(`페이지 로드 타입: ${nav.type}`);
+    if (nav.type === 'prerender') {
+      addLog('→ 이 페이지는 prerender로 로딩됨!');
+    }
+  }
+
+  // document.prerendering
+  addLog(`document.prerendering: ${document.prerendering}`);
+
+  addLog('chrome://process-internals 에서 "Prerender" 프로세스 존재 여부 확인 가능');
+}
+
+// 5. Target 페이지로 이동 (prerender 됐으면 즉시 표시)
+function navigateToTarget() {
+  const t0 = performance.now();
+  addLog(`target 페이지로 이동 시작... (t=${t0.toFixed(1)}ms)`);
+  window.location.href = 'prerender2_target.html?from=' + t0.toFixed(0);
+}
+
+// 초기화
+checkSpeculationRulesSupport();
+checkPrerenderState();
+
+// PerformanceObserver로 prerender 관련 이벤트 감시
+if (window.PerformanceObserver) {
+  try {
+    const obs = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        addLog(`[PerfObserver] ${entry.entryType}: ${entry.name}`);
+      }
+    });
+    obs.observe({ type: 'navigation', buffered: true });
+  } catch(e) {}
+}
+</script>
+</body>
+</html>
