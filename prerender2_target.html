@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Prerender2 Target</title>
+<style>
+  body { font-family: monospace; padding: 20px; background: #111; color: #eee; }
+  h2 { color: #0af; }
+  .result { margin: 10px 0; padding: 12px; border-radius: 4px; font-size: 15px; }
+  .ok  { background: #1a3a1a; border-left: 4px solid #4f4; }
+  .ng  { background: #3a1a1a; border-left: 4px solid #f44; }
+  .info { background: #1a2a3a; border-left: 4px solid #4af; }
+  a { color: #0af; }
+</style>
+</head>
+<body>
+
+<h2>Prerender2 Target Page</h2>
+
+<div id="result" class="result info">분석 중...</div>
+<div id="timing" class="result info"></div>
+<div id="prerender-info" class="result info"></div>
+
+<br>
+<a href="prerender2_test.html">← 테스트 페이지로 돌아가기</a>
+
+<script>
+// 1. prerender로 로딩됐는지 확인
+const wasPrerendered = document.prerendering;
+const activationTime = performance.now();
+
+// 2. URL 파라미터에서 출발 시간 가져오기
+const params = new URLSearchParams(location.search);
+const t0 = parseFloat(params.get('from') || '0');
+
+// 3. prerendering activation 이벤트 감지
+document.addEventListener('prerenderingchange', () => {
+  const activationDelay = performance.now();
+  document.getElementById('prerender-info').innerHTML =
+    `prerendering → activated 전환 시각: ${activationDelay.toFixed(1)}ms`;
+  document.getElementById('prerender-info').className = 'result ok';
+});
+
+window.addEventListener('load', () => {
+  const loadTime = performance.now();
+  const resultEl = document.getElementById('result');
+  const timingEl = document.getElementById('timing');
+  const infoEl = document.getElementById('prerender-info');
+
+  // prerender 여부 판단
+  const nav = performance.getEntriesByType('navigation')[0];
+  const isPrerendered = nav && nav.activationStart > 0;
+
+  if (isPrerendered) {
+    resultEl.className = 'result ng';
+    resultEl.textContent = '⚠ Prerender2 활성화 상태: 이 페이지는 prerender로 로딩됨';
+    timingEl.className = 'result ng';
+    timingEl.innerHTML =
+      `activationStart: ${nav.activationStart.toFixed(1)}ms<br>` +
+      `로드 완료: ${loadTime.toFixed(1)}ms`;
+  } else {
+    resultEl.className = 'result ok';
+    resultEl.textContent = '✓ Prerender2 비활성화 확인: 일반 페이지 로딩 (prerender 아님)';
+    timingEl.className = 'result ok';
+
+    const elapsed = t0 > 0 ? (performance.now() - 0).toFixed(0) + 'ms (navigation timing)' : '측정 불가 (직접 접근)';
+    timingEl.innerHTML =
+      `페이지 로드 시간: ${loadTime.toFixed(1)}ms<br>` +
+      `(prerender였다면 0ms에 가깝게 표시됨)`;
+  }
+
+  // Navigation type
+  if (nav) {
+    infoEl.textContent = `navigation type: ${nav.type}, activationStart: ${nav.activationStart.toFixed(2)}ms`;
+    if (!isPrerendered) infoEl.className = 'result ok';
+  }
+});
+</script>
+</body>
+</html>
