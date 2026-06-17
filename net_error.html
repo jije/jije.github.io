@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chromium Net Error Simulator Dashboard</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #202124;
+            --primary-color: #1a73e8;
+            --border-color: #dadce0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+        header {
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+        h1 { margin: 0 0 10px 0; color: var(--primary-color); font-size: 24px; }
+        p { margin: 0; color: #5f6368; font-size: 14px; }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        .category-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+        }
+        .category-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 0;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary-color);
+            color: #111;
+        }
+        .error-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .error-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        .error-item:last-child { border-bottom: none; }
+        .error-info {
+            flex-grow: 1;
+            padding-right: 10px;
+        }
+        .error-name {
+            font-family: monospace;
+            font-size: 13px;
+            font-weight: bold;
+            color: #c7254e;
+            display: block;
+        }
+        .error-desc {
+            font-size: 12px;
+            color: #5f6368;
+            margin-top: 2px;
+        }
+        .error-code {
+            font-family: monospace;
+            background: #f1f3f4;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #3c4043;
+            min-width: 35px;
+            text-align: center;
+        }
+        .btn-test {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        .btn-test:hover { background-color: #1557b0; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Chromium Network Error Simulator</h1>
+    <p>net/base/net_error_list.h 에 정의된 주요 에러 목록입니다. [Test] 버튼을 누르면 해당 에러 화면을 시뮬레이션합니다.</p>
+</header>
+
+<div class="grid" id="dashboard"></div>
+
+<script>
+const errorData = [
+    {
+        category: "System Related Errors (0 ~ 99)",
+        errors: [
+            { name: "IO_PENDING", code: -1, desc: "비동기 입출력(I/O) 작업이 아직 완료되지 않음" },
+            { name: "FAILED", code: -2, desc: "일반적인 처리 실패 (Generic Failure)" },
+            { name: "ABORTED", code: -3, desc: "사용자 작업 또는 내부 시스템에 의해 작업이 중단됨" },
+            { name: "INVALID_ARGUMENT", code: -4, desc: "함수에 전달된 인자(Argument)가 잘못됨" },
+            { name: "TIMED_OUT", code: -7, desc: "작업 처리 제한 시간(Timeout) 초과" },
+            { name: "ACCESS_DENIED", code: -10, desc: "네트워크 외의 시스템 자원에 대한 접근 권한 거부" },
+            { name: "FILE_NOT_FOUND", code: -6, desc: "지정한 파일 또는 디렉토리를 찾을 수 없음" },
+            { name: "BLOCKED_BY_CLIENT", code: -20, desc: "확장 프로그램이나 브라우저 내부 클라이언트에 의해 요청 차단" },
+            { name: "NETWORK_CHANGED", code: -21, desc: "요청 처리 중 물리 네트워크 환경(와이파이 전환 등)이 변경됨" }
+        ]
+    },
+    {
+        category: "Connection Related Errors (100 ~ 199)",
+        errors: [
+            { name: "CONNECTION_CLOSED", code: -100, desc: "TCP FIN 세션 종료 신호에 의해 연결이 정상 폐쇄됨" },
+            { name: "CONNECTION_RESET", code: -101, desc: "TCP RST 신호에 의해 강제로 연결이 리셋됨" },
+            { name: "CONNECTION_REFUSED", code: -102, desc: "대상 서버가 호스트 연결 수립을 거부함 (포트가 닫힌 경우)" },
+            { name: "CONNECTION_ABORTED", code: -103, desc: "로컬 시스템 내부 원인으로 커넥션이 폭파됨" },
+            { name: "NAME_NOT_RESOLVED", code: -105, desc: "DNS 도메인 해석 실패 (존재하지 않는 주소)" },
+            { name: "INTERNET_DISCONNECTED", code: -106, desc: "로컬 장치의 인터넷 연결이 완전히 유실됨 (공룡 화면)" },
+            { name: "ADDRESS_UNREACHABLE", code: -109, desc: "라우팅 경로 없음 (해당 IP 호스트로 접근 불가)" },
+            { name: "CONNECTION_TIMED_OUT", code: -118, desc: "서버가 TCP 핸드셰이크 요청에 응답하지 않아 타임아웃" }
+        ]
+    },
+    {
+        category: "Certificate Errors (200 ~ 299)",
+        errors: [
+            { name: "CERT_COMMON_NAME_INVALID", code: -200, desc: "SSL 인증서의 도메인 이름과 접속 주소가 일치하지 않음" },
+            { name: "CERT_DATE_INVALID", code: -201, desc: "인증서 유효기간이 만료되었거나 시스템 시간이 오염됨" },
+            { name: "CERT_AUTHORITY_INVALID", code: -202, desc: "신뢰할 수 없는 CA(기관)가 발급한 자가 서명 인증서" },
+            { name: "CERT_CONTAINS_ERRORS", code: -203, desc: "인증서 파일 구조 자체에 에러가 포함되어 파싱 불가" },
+            { name: "CERT_REVOKED", code: -206, desc: "발급 기관에 의해 명시적으로 폐기(Revoke)된 인증서" },
+            { name: "SSL_PROTOCOL_ERROR", code: -107, desc: "서버와 SSL/TLS 핸드셰이크 프로토콜 협상 실패" }
+        ]
+    },
+    {
+        category: "HTTP Errors (300 ~ 399)",
+        errors: [
+            { name: "INVALID_URL", code: -300, desc: "문법적으로 잘못 설계되었거나 파싱할 수 없는 URL" },
+            { name: "DISALLOWED_URL_SCHEME", code: -301, desc: "보안상 브라우저가 허용하지 않는 스키마 호출" },
+            { name: "TOO_MANY_REDIRECTS", code: -310, desc: "HTTP 리다이렉트(302/301) 루프가 한계치 초과 발생" },
+            { name: "INVALID_RESPONSE", code: -320, desc: "서버가 규격 외의 잘못된 HTTP 응답 헤더/데이터를 전송함" },
+            { name: "EMPTY_RESPONSE", code: -324, desc: "서버가 커넥션은 맺었으나 아무런 데이터도 주지 않고 끊음" },
+            { name: "HTTP_POST_REDIRECT", code: -331, desc: "POST 요청 도중 안전하지 않은 리다이렉트 발생" }
+        ]
+    },
+    {
+        category: "Cache & Content Errors (400 ~ 499 & 900+)",
+        errors: [
+            { name: "CACHE_MISS", code: -400, desc: "캐시 전용 모드에서 로컬 캐시 데이터를 찾지 못함" },
+            { name: "CACHE_READ_FAILURE", code: -401, desc: "디스크 디바이스 배드섹터 등으로 캐시 파일 읽기 실패" },
+            { name: "CONTENT_DECODING_FAILED", code: -330, desc: "GZIP/Brotli 등 컨텐츠 압축 해제(디코딩) 실패" },
+            { name: "BLOB_NOT_FOUND", code: -901, desc: "브라우저 메모리 내부의 Blob 자원을 참조하지 못함" }
+        ]
+    }
+];
+
+const dashboard = document.getElementById('dashboard');
+
+errorData.forEach(cat => {
+    const card = document.createElement('div');
+    card.className = 'category-card';
+    
+    let html = `<h2 class="category-title">${cat.category}</h2>`;
+    html += `<ul class="error-list">`;
+    
+    cat.errors.forEach(err => {
+        html += `
+            <li class="error-item">
+                <div class="error-info">
+                    <span class="error-name">ERR_${err.name}</span>
+                    <span class="error-desc">${err.desc}</span>
+                </div>
+                <span class="error-code">${err.code}</span>
+                <a href="chrome://network-error/${err.code}" class="btn-test" target="_blank">Test</a>
+            </li>
+        `;
+    });
+    
+    html += `</ul>`;
+    card.innerHTML = html;
+    dashboard.appendChild(card);
+});
+</script>
+</body>
+</html>
