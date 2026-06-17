@@ -115,7 +115,8 @@
 <div class="grid" id="dashboard"></div>
 
 <script>
-const errorData = [
+    
+/* const errorData = [
     {
         category: "System Related Errors (0 ~ 99)",
         errors: [
@@ -174,6 +175,36 @@ const errorData = [
             { name: "BLOB_NOT_FOUND", code: -901, desc: "브라우저 메모리 내부의 Blob 자원을 참조하지 못함" }
         ]
     }
+]; */
+    const errorData = [
+    {
+        category: "HTTP Status Code Errors (서버 응답 에러)",
+        errors: [
+            { name: "BAD_REQUEST", code: "400", url: "https://httpbin.org/status/400", desc: "잘못된 요청 (클라이언트 문법 오류)" },
+            { name: "UNAUTHORIZED", code: "401", url: "https://httpbin.org/status/401", desc: "인증 권한 없음 (로그인 유실 세션)" },
+            { name: "FORBIDDEN", code: "403", url: "https://httpbin.org/status/403", desc: "접근 금지 (서버가 인가 거부)" },
+            { name: "NOT_FOUND", code: "404", url: "https://httpbin.org/status/404", desc: "페이지를 찾을 수 없음 (주소 오타)" },
+            { name: "METHOD_NOT_ALLOWED", code: "405", url: "https://httpbin.org/status/405", desc: "허용되지 않는 메소드 (GET/POST 오류)" },
+            { name: "INTERNAL_SERVER_ERROR", code: "500", url: "https://httpbin.org/status/500", desc: "서버 내부 로직 치명적 에러" },
+            { name: "BAD_GATEWAY", code: "502", url: "https://httpbin.org/status/502", desc: "게이트웨이 불량 (중간 프록시 서버 폭파)" },
+            { name: "SERVICE_UNAVAILABLE", code: "503", url: "https://httpbin.org/status/503", desc: "서버 과부하 또는 유지보수로 다운됨" }
+        ]
+    },
+    {
+        category: "Network Timeout & Delay (지연 에러)",
+        errors: [
+            { name: "GATEWAY_TIMEOUT_3S", code: "504", url: "https://httpbin.org/delay/3", desc: "서버가 의도적으로 3초간 응답을 멈춤" },
+            { name: "GATEWAY_TIMEOUT_10S", code: "504", url: "https://httpbin.org/delay/10", desc: "서버가 의도적으로 10초간 응답을 멈춤 (타임아웃용)" }
+        ]
+    },
+    {
+        category: "SSL/TLS Security Errors (보안 인증서 에러)",
+        errors: [
+            { name: "CERT_DATE_INVALID", code: "SSL", url: "https://expired.badssl.com/", desc: "기간이 만료된 SSL 인증서 강제 진입" },
+            { name: "CERT_AUTHORITY_INVALID", code: "SSL", url: "https://self-signed.badssl.com/", desc: "신뢰할 수 없는 사설 인증서 강제 진입" },
+            { name: "CERT_COMMON_NAME_INVALID", code: "SSL", url: "https://wrong.host.badssl.com/", desc: "호스트명이 불일치하는 인증서 강제 진입" }
+        ]
+    }
 ];
 
 const dashboard = document.getElementById('dashboard');
@@ -193,7 +224,8 @@ errorData.forEach(cat => {
                     <span class="error-desc">${err.desc}</span>
                 </div>
                 <span class="error-code">${err.code}</span>
-                <a href="chrome://network-error/${err.code}" class="btn-test" target="_blank">Test</a>
+               <!-- <a href="chrome://network-error/${err.code}" class="btn-test" target="_blank">Test</a>  -->
+                <a href="${err.url}" class="btn-test">Test</a>
             </li>
         `;
     });
