@@ -1,0 +1,145 @@
+<title>Windows UA 앱 첫화면 — mobile 플래그 비교</title>
+<style>
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+body { font: 13px/1.5 -apple-system, "Noto Sans KR", sans-serif; margin: 0;
+        padding: 20px; background: #fafafa; color: #1a1a1a; }
+h1 { font-size: 20px; margin: 0 0 4px; }
+.sub { color: #666; margin: 0 0 8px; }
+.sum { background: #fff; border: 1px solid #e2e2e2; border-radius: 7px;
+        padding: 10px 14px; margin: 0 0 18px; }
+.wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; background: #fff;
+         border: 1px solid #e2e2e2; border-radius: 7px; }
+thead th { position: sticky; top: 0; background: #f1f3f5; z-index: 2;
+            font-size: 12px; padding: 9px 10px; text-align: left;
+            border-bottom: 1px solid #dde1e5; }
+td, th { border-bottom: 1px solid #eceef0; vertical-align: middle; padding: 8px; }
+tr:last-child td, tr:last-child th { border-bottom: 0; }
+.name { width: 148px; text-align: left; font-size: 13px; font-weight: 600; }
+.meta { font-weight: 400; color: #888; font-size: 11px;
+         font-family: ui-monospace, Menlo, monospace; }
+.shot { width: 45%; }
+.shot img { width: 100%; display: block; border: 1px solid #ddd;
+             border-radius: 3px; background: #000; }
+.shot img:hover { outline: 2px solid #2563eb; }
+.none { text-align: center; color: #aaa; }
+.info { width: 220px; font-size: 11.5px;
+         font-family: ui-monospace, Menlo, monospace; }
+.info b { font-family: -apple-system, sans-serif; color: #888;
+           font-weight: 500; margin-right: 3px; }
+.u { overflow-wrap: anywhere; }
+.n { margin-top: 5px; }
+.chg { display: inline-block; background: #fef3c7; color: #92400e;
+        padding: 1px 6px; border-radius: 9px; font-size: 11px; margin-right: 3px; }
+.same { color: #999; font-size: 11px; }
+.warn { color: #d97706; }
+.ua { display: inline-block; background: #dcfce7; color: #166534; padding: 1px 6px;
+       border-radius: 9px; font-size: 10px; font-weight: 600; margin-left: 4px; }
+.row-chg th.name { box-shadow: inset 3px 0 0 #f59e0b; }
+@media (prefers-color-scheme: dark) {
+  body { background: #16181c; color: #e6e6e6; }
+  table, .sum { background: #1e2126; border-color: #2f343b; }
+  thead th { background: #262a30; border-bottom-color: #343941; }
+  td, th { border-bottom-color: #2a2e34; }
+  .shot img { border-color: #333; }
+}
+</style>
+<h1>앱 첫화면 — <code>mobile</code> 플래그 비교</h1>
+<!--<p class="sub">192.168.105.1 · 캡처 1780×720 · 이미지 클릭 시 원본</p>
+<div class="sum">
+<b>21개</b> 앱 · 변화 감지 <b>5개</b>
+— AFL Live Offical App, Apple Music, Disney+, news.com.au, YouTube Music
+<br><span class="sub">좌: <code>Sec-CH-UA-Mobile: ?1</code> (이전) &nbsp;|&nbsp;
+우: <code>?0</code> + <code>Form-Factors: "Desktop"</code> (현재).
+변화 판정은 최종 URL 차이 또는 PNG 크기 ±15% 이상.</span>
+</div>-->
+<div class="wrap"><table>
+<thead><tr><th>앱</th><th>이전 · mobile=true</th><th>현재 · mobile=false</th></tr></thead>
+<tbody>
+<tr>
+<th class="name">ABC News<div class="meta">1618x655</div></th>
+<td class="shot"><a href="shots_mobile_true/ABC_News.png" target="_blank"><img loading="lazy" src="shots_mobile_true/ABC_News.png"></a></td>
+<td class="shot"><a href="shots/ABC_News.png" target="_blank"><img loading="lazy" src="shots/ABC_News.png"></a></td>
+</tr><tr>
+<th class="name">AFL Live Offical App<div class="meta">1483x600</div></th>
+<td class="shot"><a href="shots_mobile_true/AFL_Live_Offical_App.png" target="_blank"><img loading="lazy" src="shots_mobile_true/AFL_Live_Offical_App.png"></a></td>
+<td class="shot"><a href="shots/AFL_Live_Offical_App.png" target="_blank"><img loading="lazy" src="shots/AFL_Live_Offical_App.png"></a></td>
+</tr><tr>
+<th class="name">Apple Music<div class="meta">1271x514</div></th>
+<td class="shot"><a href="shots_mobile_true/Apple_Music.png" target="_blank"><img loading="lazy" src="shots_mobile_true/Apple_Music.png"></a></td>
+<td class="shot"><a href="shots/Apple_Music.png" target="_blank"><img loading="lazy" src="shots/Apple_Music.png"></a></td>
+</tr><tr>
+<th class="name">Apple Podcasts<div class="meta">1271x514</div></th>
+<td class="shot"><a href="shots_mobile_true/Apple_Podcasts.png" target="_blank"><img loading="lazy" src="shots_mobile_true/Apple_Podcasts.png"></a></td>
+<td class="shot"><a href="shots/Apple_Podcasts.png" target="_blank"><img loading="lazy" src="shots/Apple_Podcasts.png"></a></td>
+</tr><tr>
+<th class="name">Audiobooks.com<div class="meta">1780x720</div></th>
+<td class="shot"><a href="shots_mobile_true/Audiobooks_com.png" target="_blank"><img loading="lazy" src="shots_mobile_true/Audiobooks_com.png"></a></td>
+<td class="shot"><a href="shots/Audiobooks_com.png" target="_blank"><img loading="lazy" src="shots/Audiobooks_com.png"></a></td>
+</tr><tr>
+<th class="name">Calm<div class="meta">1271x514</div></th>
+<td class="shot"><a href="shots_mobile_true/Calm.png" target="_blank"><img loading="lazy" src="shots_mobile_true/Calm.png"></a></td>
+<td class="shot"><a href="shots/Calm.png" target="_blank"><img loading="lazy" src="shots/Calm.png"></a></td>
+</tr><tr>
+<th class="name">Disney+<div class="meta">1271x514</div></th>
+<td class="shot"><a href="shots_mobile_true/Disney_loggedin.png" target="_blank"><img loading="lazy" src="shots_mobile_true/Disney_loggedin.png"></a></td>
+<td class="shot"><a href="shots/Disney_loggedin.png" target="_blank"><img loading="lazy" src="shots/Disney_loggedin.png"></a></td>
+</tr><tr>
+<th class="name">Facebook<div class="meta">1187x480</div></th>
+<td class="shot"><a href="shots_mobile_true/Facebook.png" target="_blank"><img loading="lazy" src="shots_mobile_true/Facebook.png"></a></td>
+<td class="shot"><a href="shots/Facebook.png" target="_blank"><img loading="lazy" src="shots/Facebook.png"></a></td>
+</tr><tr>
+<th class="name">Instagram<div class="meta">1271x514</div></th>
+<td class="shot"><a href="shots_mobile_true/Instagram.png" target="_blank"><img loading="lazy" src="shots_mobile_true/Instagram.png"></a></td>
+<td class="shot"><a href="shots/Instagram.png" target="_blank"><img loading="lazy" src="shots/Instagram.png"></a></td>
+</tr><tr>
+<th class="name">LiSTNR<div class="meta">1483x600</div></th>
+<td class="shot"><a href="shots_mobile_true/LiSTNR.png" target="_blank"><img loading="lazy" src="shots_mobile_true/LiSTNR.png"></a></td>
+<td class="shot"><a href="shots/LiSTNR.png" target="_blank"><img loading="lazy" src="shots/LiSTNR.png"></a></td>
+</tr><tr>
+<th class="name">news.com.au<div class="meta">1483x600</div></th>
+<td class="shot"><a href="shots_mobile_true/news_com_au.png" target="_blank"><img loading="lazy" src="shots_mobile_true/news_com_au.png"></a></td>
+<td class="shot"><a href="shots/news_com_au.png" target="_blank"><img loading="lazy" src="shots/news_com_au.png"></a></td>
+</tr><tr>
+<th class="name">Official NRL App<div class="meta">1483x600</div></th>
+<td class="shot"><a href="shots_mobile_true/Official_NRL_App.png" target="_blank"><img loading="lazy" src="shots_mobile_true/Official_NRL_App.png"></a></td>
+<td class="shot"><a href="shots/Official_NRL_App.png" target="_blank"><img loading="lazy" src="shots/Official_NRL_App.png"></a></td>
+</tr><tr>
+<th class="name">Plex<div class="meta">1271x514</div></th>
+<td class="shot"><a href="shots_mobile_true/Plex.png" target="_blank"><img loading="lazy" src="shots_mobile_true/Plex.png"></a></td>
+<td class="shot"><a href="shots/Plex.png" target="_blank"><img loading="lazy" src="shots/Plex.png"></a></td>
+</tr><tr>
+<th class="name">PlugShare<div class="meta">1271x514</div></th>
+<td class="shot"><a href="shots_mobile_true/PlugShare.png" target="_blank"><img loading="lazy" src="shots_mobile_true/PlugShare.png"></a></td>
+<td class="shot"><a href="shots/PlugShare.png" target="_blank"><img loading="lazy" src="shots/PlugShare.png"></a></td>
+</tr><tr>
+<th class="name">Prime Video <span class="ua">Linux UA</span><div class="meta">1618x655</div></th>
+<td class="shot"><a href="shots_mobile_true/Prime_Video.png" target="_blank"><img loading="lazy" src="shots_mobile_true/Prime_Video.png"></a></td>
+<td class="shot"><a href="shots/Prime_Video_now.png" target="_blank"><img loading="lazy" src="shots/Prime_Video_now.png"></a></td>
+</tr><tr>
+<th class="name">Quizlet<div class="meta">1369x554</div></th>
+<td class="shot"><a href="shots_mobile_true/Quizlet.png" target="_blank"><img loading="lazy" src="shots_mobile_true/Quizlet.png"></a></td>
+<td class="shot"><a href="shots/Quizlet.png" target="_blank"><img loading="lazy" src="shots/Quizlet.png"></a></td>
+</tr><tr>
+<th class="name">ReelShort<div class="meta">1271x514</div></th>
+<td class="shot"><a href="shots_mobile_true/ReelShort.png" target="_blank"><img loading="lazy" src="shots_mobile_true/ReelShort.png"></a></td>
+<td class="shot"><a href="shots/ReelShort.png" target="_blank"><img loading="lazy" src="shots/ReelShort.png"></a></td>
+</tr><tr>
+<th class="name">Telegram<div class="meta">1369x554</div></th>
+<td class="shot"><a href="shots_mobile_true/Telegram.png" target="_blank"><img loading="lazy" src="shots_mobile_true/Telegram.png"></a></td>
+<td class="shot"><a href="shots/Telegram.png" target="_blank"><img loading="lazy" src="shots/Telegram.png"></a></td>
+</tr><tr>
+<th class="name">WhatsApp<div class="meta">1483x600</div></th>
+<td class="shot"><a href="shots_mobile_true/WhatsApp.png" target="_blank"><img loading="lazy" src="shots_mobile_true/WhatsApp.png"></a></td>
+<td class="shot"><a href="shots/WhatsApp.png" target="_blank"><img loading="lazy" src="shots/WhatsApp.png"></a></td>
+</tr><tr>
+<th class="name">X<div class="meta">1483x600</div></th>
+<td class="shot"><a href="shots_mobile_true/X.png" target="_blank"><img loading="lazy" src="shots_mobile_true/X.png"></a></td>
+<td class="shot"><a href="shots/X.png" target="_blank"><img loading="lazy" src="shots/X.png"></a></td>
+</tr><tr>
+<th class="name">YouTube Music<div class="meta">1483x600</div></th>
+<td class="shot"><a href="shots_mobile_true/YouTube_Music.png" target="_blank"><img loading="lazy" src="shots_mobile_true/YouTube_Music.png"></a></td>
+<td class="shot"><a href="shots/YouTube_Music.png" target="_blank"><img loading="lazy" src="shots/YouTube_Music.png"></a></td>
+</tr>
+</tbody></table></div>

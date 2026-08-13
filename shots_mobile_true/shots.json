@@ -1,0 +1,156 @@
+{
+ "YouTube Music": {
+  "url": "https://music.youtube.com/",
+  "title": "YouTube Music",
+  "size": "1483x600",
+  "file": "YouTube_Music.png",
+  "bytes": 329279
+ },
+ "WhatsApp": {
+  "url": "https://web.whatsapp.com/",
+  "title": "WhatsApp",
+  "size": "1483x600",
+  "file": "WhatsApp.png",
+  "bytes": 92358
+ },
+ "Instagram": {
+  "url": "https://www.instagram.com/",
+  "title": "Instagram",
+  "size": "1271x514",
+  "file": "Instagram.png",
+  "bytes": 254064
+ },
+ "PlugShare": {
+  "url": "https://www.plugshare.com/",
+  "title": "PlugShare - EV Charging Station Map - Find a place to charge your car!",
+  "size": "1271x514",
+  "file": "PlugShare.png",
+  "bytes": 302283
+ },
+ "Plex": {
+  "url": "https://app.plex.tv/desktop/#!",
+  "title": "Plex",
+  "size": "1271x514",
+  "file": "Plex.png",
+  "bytes": 581274
+ },
+ "Calm": {
+  "url": "https://www.calm.com/app",
+  "title": "Calm - The #1 App for Meditation and Sleep",
+  "size": "1271x514",
+  "file": "Calm.png",
+  "bytes": 559654
+ },
+ "Telegram": {
+  "url": "https://web.telegram.org/k/",
+  "title": "Telegram Web",
+  "size": "1369x554",
+  "file": "Telegram.png",
+  "bytes": 668179
+ },
+ "X": {
+  "url": "https://x.com/home",
+  "title": "Home / X",
+  "size": "1483x600",
+  "file": "X.png",
+  "bytes": 481070
+ },
+ "Disney+": {
+  "url": "https://www.disneyplus.com/identity/login",
+  "title": "Login to Disney+ | Login or Signup",
+  "size": "1271x514",
+  "file": "Disney.png",
+  "bytes": 9893
+ },
+ "Apple Music": {
+  "url": "https://music.apple.com/us/new",
+  "title": "‎Apple Music - Web Player",
+  "size": "1271x514",
+  "file": "Apple_Music.png",
+  "bytes": 250839
+ },
+ "Facebook": {
+  "url": "https://www.facebook.com/",
+  "title": "Facebook",
+  "size": "1187x480",
+  "file": "Facebook.png",
+  "bytes": 422877
+ },
+ "Apple Podcasts": {
+  "url": "https://podcasts.apple.com/us/new",
+  "title": "Apple Podcasts - Web Player",
+  "size": "1271x514",
+  "file": "Apple_Podcasts.png",
+  "bytes": 413221
+ },
+ "Quizlet": {
+  "url": "https://quizlet.com/kr",
+  "title": "낱말카드, 학습 도구 및 교과서 솔루션 | Quizlet",
+  "size": "1369x554",
+  "file": "Quizlet.png",
+  "bytes": 71053
+ },
+ "ReelShort": {
+  "url": "https://www.reelshort.com/",
+  "title": "ReelShort: Every Second Is Drama",
+  "size": "1271x514",
+  "file": "ReelShort.png",
+  "bytes": 1017599
+ },
+ "Audiobooks.com": {
+  "url": "https://www.audiobooks.com/",
+  "title": "Audiobooks.com | Get 3 Audiobooks Free",
+  "size": "1780x720",
+  "file": "Audiobooks_com.png",
+  "bytes": 413622
+ },
+ "LiSTNR": {
+  "url": "https://play.listnr.com/",
+  "title": "LiSTNR - Web Player - Radio, Podcasts, Music, Sport",
+  "size": "1483x600",
+  "file": "LiSTNR.png",
+  "bytes": 257085
+ },
+ "ABC News": {
+  "url": "https://www.abc.net.au/",
+  "title": "ABC News & Headlines – Australian Broadcasting Corporation",
+  "size": "1618x655",
+  "file": "ABC_News.png",
+  "bytes": 340152
+ },
+ "news.com.au": {
+  "url": "https://www.news.com.au/",
+  "title": "news.com.au — Australia’s leading news site for latest headlines",
+  "size": "1483x600",
+  "file": "news_com_au.png",
+  "bytes": 238309
+ },
+ "AFL Live Offical App": {
+  "url": "https://www.afl.com.au/",
+  "title": "AFL - News, Videos, Fixtures, Scores & Results - AFL.com.au",
+  "size": "1483x600",
+  "file": "AFL_Live_Offical_App.png",
+  "bytes": 363018
+ },
+ "Official NRL App": {
+  "url": "https://www.nrl.com/",
+  "title": "The official website of the National Rugby League | NRL.com",
+  "size": "1483x600",
+  "file": "Official_NRL_App.png",
+  "bytes": 119621
+ },
+ "Prime Video": {
+  "url": "https://www.primevideo.com/offers/nonprimehomepage?ref_=dv_web_force_root",
+  "title": "프라임 비디오 방문을 환영합니다",
+  "size": "1618x655",
+  "file": "Prime_Video.png",
+  "bytes": 880596
+ },
+ "Disney+ (로그인 후)": {
+  "url": "https://www.disneyplus.com/home",
+  "title": "For You | Disney+",
+  "size": "1271x514",
+  "file": "Disney_loggedin.png",
+  "bytes": 804862
+ }
+}
