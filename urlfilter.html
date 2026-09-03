@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html{color-scheme:light dark}
+  body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif;background:#fff}
+  img{max-width:100%}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<title>URL Filter Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --paper:#eef0f4;
+    --surface:#ffffff;
+    --surface-2:#f6f7f9;
+    --ink:#161a21;
+    --ink-2:#454d5b;
+    --ink-3:#727d8e;
+    --line:#d9dee6;
+    --line-2:#c3cad6;
+    --accent:#4a3fc4;
+    --accent-soft:#e9e7fb;
+    --pass:#1c7a4f;
+    --pass-soft:#e0f2e8;
+    --deny:#bf2f26;
+    --deny-soft:#fbe6e4;
+    --warn:#a86400;
+    --warn-soft:#fbeed7;
+    --shadow:0 1px 2px rgba(22,26,33,.06),0 8px 24px -12px rgba(22,26,33,.18);
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --paper:#0e1116;
+      --surface:#161a21;
+      --surface-2:#1c212a;
+      --ink:#e8ecf2;
+      --ink-2:#b3bccb;
+      --ink-3:#7d879a;
+      --line:#2a313d;
+      --line-2:#3a4353;
+      --accent:#a79dff;
+      --accent-soft:#241f4d;
+      --pass:#5ed49a;
+      --pass-soft:#13301f;
+      --deny:#ff8a80;
+      --deny-soft:#361715;
+      --warn:#e8b45c;
+      --warn-soft:#332512;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0e1116; --surface:#161a21; --surface-2:#1c212a;
+    --ink:#e8ecf2; --ink-2:#b3bccb; --ink-3:#7d879a;
+    --line:#2a313d; --line-2:#3a4353;
+    --accent:#a79dff; --accent-soft:#241f4d;
+    --pass:#5ed49a; --pass-soft:#13301f;
+    --deny:#ff8a80; --deny-soft:#361715;
+    --warn:#e8b45c; --warn-soft:#332512;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--sans);font-size:14px;line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1360px;margin:0 auto;padding:28px 24px 64px}
+
+  header.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px;margin-bottom:6px}
+  h1{
+    font-size:23px;font-weight:600;letter-spacing:-.02em;margin:0;
+    text-wrap:balance;
+  }
+  .sub{color:var(--ink-3);font-size:13px;margin:0 0 22px}
+  .sub code{font-family:var(--mono);font-size:12px;color:var(--ink-2)}
+
+  .grid{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:20px;align-items:start}
+  @media (max-width:940px){.grid{grid-template-columns:minmax(0,1fr)}}
+
+  .panel{
+    background:var(--surface);border:1px solid var(--line);border-radius:10px;
+    box-shadow:var(--shadow);
+  }
+  .panel-head{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:12px 16px;border-bottom:1px solid var(--line);
+  }
+  .panel-head h2{
+    margin:0;font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--ink-3);
+  }
+  .panel-body{padding:16px;display:flex;flex-direction:column;gap:16px}
+
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field > label{
+    font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);
+    font-family:var(--mono);
+  }
+  .field .hint{font-size:11.5px;color:var(--ink-3);margin:-2px 0 0}
+  textarea,input[type=text]{
+    width:100%;font-family:var(--mono);font-size:12.5px;line-height:1.6;
+    color:var(--ink);background:var(--surface-2);
+    border:1px solid var(--line);border-radius:7px;padding:9px 11px;resize:vertical;
+  }
+  textarea{min-height:76px}
+  textarea:focus,input[type=text]:focus{
+    outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent;
+  }
+  .urlrow input[type=text]{font-size:13.5px;padding:11px 12px}
+
+  /* verdict */
+  .verdict{
+    display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;
+    padding:16px;border-radius:10px;border:1px solid var(--line);
+    background:var(--surface-2);
+  }
+  .verdict.is-pass{background:var(--pass-soft);border-color:color-mix(in srgb,var(--pass) 32%,transparent)}
+  .verdict.is-deny{background:var(--deny-soft);border-color:color-mix(in srgb,var(--deny) 32%,transparent)}
+  .verdict.is-warn{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 32%,transparent)}
+  .verdict-main{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .verdict-label{font-size:18px;font-weight:700;letter-spacing:-.01em}
+  .is-pass .verdict-label{color:var(--pass)}
+  .is-deny .verdict-label{color:var(--deny)}
+  .is-warn .verdict-label{color:var(--warn)}
+  .verdict-meta{font-family:var(--mono);font-size:11.5px;color:var(--ink-2);word-break:break-all}
+
+  /* parsed url */
+  .parsed{
+    display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 14px;
+    font-family:var(--mono);font-size:12px;padding:14px 16px;
+    border:1px solid var(--line);border-radius:9px;background:var(--surface-2);
+  }
+  .parsed dt{color:var(--ink-3)}
+  .parsed dd{margin:0;word-break:break-all;color:var(--ink)}
+
+  /* trace */
+  .step{border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--surface)}
+  .step + .step{margin-top:10px}
+  .step-head{
+    display:flex;align-items:center;gap:10px;padding:10px 14px;
+    background:var(--surface-2);border-bottom:1px solid var(--line);
+  }
+  .step-n{
+    font-family:var(--mono);font-size:11px;color:var(--ink-3);
+    width:18px;flex:none;
+  }
+  .step-title{font-size:13px;font-weight:600;flex:1;min-width:0}
+  .step-title code{font-family:var(--mono);font-weight:500;font-size:12px;color:var(--ink-2)}
+  .step-out{
+    font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.04em;
+    padding:2px 8px;border-radius:20px;white-space:nowrap;
+  }
+  .out-pass{color:var(--pass);background:var(--pass-soft)}
+  .out-deny{color:var(--deny);background:var(--deny-soft)}
+
+  .rules{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11.5px}
+  .rules th{
+    text-align:left;font-weight:500;color:var(--ink-3);font-size:10px;
+    letter-spacing:.07em;text-transform:uppercase;padding:8px 14px;border-bottom:1px solid var(--line);
+  }
+  .rules td{padding:7px 14px;border-bottom:1px solid var(--line);vertical-align:top;word-break:break-all}
+  .rules tr:last-child td{border-bottom:0}
+  .rules tr.hit td{background:var(--deny-soft)}
+  .rules tr.hit-ok td{background:var(--pass-soft)}
+  .mark{width:1%;white-space:nowrap;font-weight:600}
+  .mark.y{color:var(--deny)}
+  .mark.y-ok{color:var(--pass)}
+  .mark.n{color:var(--ink-3)}
+  .why{color:var(--ink-2)}
+  .empty{padding:11px 14px;color:var(--ink-3);font-size:12px;font-style:italic}
+
+  .kind{
+    display:inline-block;font-size:10px;letter-spacing:.04em;
+    padding:1px 6px;border-radius:4px;background:var(--accent-soft);color:var(--accent);
+    font-weight:600;
+  }
+  .err{
+    font-family:var(--mono);font-size:12px;color:var(--deny);
+    background:var(--deny-soft);border:1px solid color-mix(in srgb,var(--deny) 30%,transparent);
+    border-radius:7px;padding:9px 12px;
+  }
+  .foot{
+    margin-top:22px;font-size:11.5px;color:var(--ink-3);line-height:1.7;
+    border-top:1px solid var(--line);padding-top:14px;
+  }
+  .foot code{font-family:var(--mono);color:var(--ink-2)}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>URL Filter Bench</h1>
+  </header>
+  <p class="sub">
+    <code>ObigoNavigationThrottle::Evaluate()</code> 판정을 그대로 재현합니다 &mdash;
+    규칙이 어떻게 파싱되고, 각 단계에서 왜 맞거나 빗나갔는지 보여줍니다.
+  </p>
+
+  <div class="grid">
+    <!-- ───────── input ───────── -->
+    <section class="panel">
+      <div class="panel-head"><h2>Configuration</h2></div>
+      <div class="panel-body">
+
+        <div class="field urlrow">
+          <label for="url">test url</label>
+          <input type="text" id="url" spellcheck="false" autocapitalize="off" autocorrect="off">
+        </div>
+
+        <div class="field">
+          <label for="white">whiteList</label>
+          <p class="hint">한 줄에 하나. 스킴 포함 전체 URL.</p>
+          <textarea id="white" spellcheck="false"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="black">blackList</label>
+          <p class="hint">한 줄에 하나. 스킴 포함 전체 URL.</p>
+          <textarea id="black" spellcheck="false"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="blackmap">blackList (domain map)</label>
+          <p class="hint">JSON. <code>{"host": ["패턴", …]}</code></p>
+          <textarea id="blackmap" spellcheck="false" style="min-height:104px"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="unsup">unSupportedDomainList</label>
+          <p class="hint">JSON. 같은 형식.</p>
+          <textarea id="unsup" spellcheck="false" style="min-height:104px"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────── result ───────── -->
+    <section class="panel">
+      <div class="panel-head"><h2>Evaluation</h2></div>
+      <div class="panel-body">
+        <div id="verdict"></div>
+        <dl class="parsed" id="parsed"></dl>
+        <div id="trace"></div>
+      </div>
+    </section>
+  </div>
+
+  <p class="foot">
+    이식 원본 &mdash;
+    <code>content/browser/obigo/obigo_navigation_throttle.cc</code> ·
+    <code>third_party/blink/common/obigo/url_filter.cc</code>.
+    호스트 비교는 <code>GURL::DomainIs()</code>(정확히 일치하거나 <code>.host</code> 로 끝남),
+    경로/쿼리는 <code>MatchDomainRules()</code> · <code>IsPathUnderPattern()</code> · <code>MatchQueryAND()</code> 를 따릅니다.
+    <code>spotify:</code> 스킴 예외와 <code>=/</code> 기본 규칙 주입도 포함되어 있습니다.
+  </p>
+</div>
+
+<script>
+"use strict";
+
+/* ══════════════ url_filter.cc 이식 ══════════════ */
+
+const BLOCKED_SCHEMES = ["mailto","tel","sms","ftp","sftp"];
+const SPOTIFY_SCHEME  = "spotify";
+
+const K = { EXACT:"kExactPath", WILD:"kWildcardPath", PREFIX:"kPathPrefix", SPEC:"kSpecSubstring" };
+
+function gurl(raw){
+  // GURL 유사 파서. 스킴 없는 문자열은 invalid 로 취급(= GURL 동작).
+  let u;
+  try { u = new URL(raw); } catch(e){ return { valid:false, raw }; }
+  const scheme = u.protocol.replace(/:$/,"");
+  const host   = u.hostname.toLowerCase();
+  return {
+    valid:true, raw, scheme, host,
+    hasHost: host.length > 0,
+    path: u.pathname || "",
+    query: u.search.startsWith("?") ? u.search.slice(1) : "",
+    spec: u.href,
+  };
+}
+
+// GURL::DomainIs — 완전 일치 또는 "." 경계 접미사
+function domainIs(host, d){
+  if(!d) return false;
+  host = host.toLowerCase(); d = d.toLowerCase().replace(/^\./,"");
+  return host === d || host.endsWith("." + d);
+}
+
+function parseQueryList(q){
+  const out = [];
+  if(!q) return out;
+  for(const tok of q.split("&")){
+    if(!tok) continue;
+    const eq = tok.indexOf("=");
+    if(eq === -1) out.push([tok, ""]);
+    else out.push([tok.slice(0,eq), tok.slice(eq+1)]);
+  }
+  return out;
+}
+
+function queryIndex(g){
+  const m = new Map();
+  for(const [k,v] of parseQueryList(g.query)){
+    if(!m.has(k)) m.set(k, []);
+    m.get(k).push(v);
+  }
+  return {
+    hasKey: k => m.has(k),
+    hasKeyValue: (k,v) => (m.get(k)||[]).includes(v),
+  };
+}
+
+function matchQueryAND(required, actual){
+  if(!required.length) return true;
+  for(const [k,v] of required){
+    if(v === "" ? !actual.hasKey(k) : !actual.hasKeyValue(k,v)) return false;
+  }
+  return true;
+}
+
+function extractQueryFromPattern(pattern){
+  const i = pattern.indexOf("?");
+  if(i === -1) return { pattern, query_kv: [] };
+  return { pattern: pattern.slice(0,i), query_kv: parseQueryList(pattern.slice(i+1)) };
+}
+
+function buildDomainRule(pattern){
+  const { pattern:p, query_kv } = extractQueryFromPattern(pattern);
+  if(p === "")                 return { type:K.SPEC,   pattern:"",           query_kv, src:pattern };
+  if(p[0] === "=")             return { type:K.EXACT,  pattern:p.slice(1),   query_kv, src:pattern };
+  if(p[0] === "*")             return { type:K.WILD,   pattern:p.slice(1),   query_kv, src:pattern };
+  if(p[0] === "/")             return { type:K.PREFIX, pattern:p,            query_kv, src:pattern };
+  return                              { type:K.SPEC,   pattern:p,            query_kv, src:pattern };
+}
+
+// NormalizeDomainRule — 키의 경로/쿼리를 kExactPath 규칙으로 떼어내고 host 만 남김
+function normalizeDomainRule(key){
+  let g = gurl(key);
+  if(!g.valid || !g.hasHost) g = gurl("https://" + key);
+  const rules = [];
+  let host = key;
+  if(g.valid && g.hasHost){
+    const keyPath = g.path === "" ? "/" : g.path;
+    if(keyPath !== "/" || g.query !== ""){
+      rules.push({ type:K.EXACT, pattern:keyPath, query_kv:parseQueryList(g.query),
+                   src:"(키 경로) " + keyPath + (g.query ? "?" + g.query : "") });
+    }
+    host = g.host;
+  }
+  return { host: host.toLowerCase(), rules };
+}
+
+function buildDomainMap(obj, isUnsupported){
+  const map = [];   // [{host, rules[], key}]
+  for(const key of Object.keys(obj || {})){
+    const paths = obj[key] || [];
+    if(isUnsupported && key.indexOf(SPOTIFY_SCHEME + ":") === 0){
+      map.push({ host:key, rules:[], key, spotify:true });
+      continue;
+    }
+    const { host, rules } = normalizeDomainRule(key);
+    if(isUnsupported && !host) continue;
+    for(const p of paths){ if(p !== "") rules.push(buildDomainRule(p)); }
+    if(!rules.length) rules.push(buildDomainRule("=/"));
+    if(!host) continue;
+    const found = map.find(e => e.host === host && !e.spotify);
+    if(found) found.rules.push(...rules);
+    else map.push({ host, rules, key });
+  }
+  return map;
+}
+
+function parseRuleToParts(rule){
+  const g = gurl(rule);
+  if(!g.valid || !g.host) return null;
+  return { host:g.host, path:g.path === "" ? "/" : g.path,
+           query_kv:parseQueryList(g.query), full_url:g.spec, src:rule };
+}
+
+function buildUrlParts(lines){
+  const out = [];
+  for(const raw of lines){
+    const s = raw.trim();
+    if(!s) continue;
+    const p = parseRuleToParts(s);
+    if(p) out.push(p); else out.push({ invalid:true, src:s });
+  }
+  return out;
+}
+
+function isPathUnderPattern(pattern, path){
+  if(pattern === "" || pattern === "/") return true;
+  const pat  = pattern.split("/").filter(Boolean);
+  const parts= path.split("/").filter(Boolean);
+  if(pat.length > parts.length) return false;
+  for(let i=0;i<pat.length;i++) if(pat[i] !== parts[i]) return false;
+  return true;
+}
+
+// 규칙 하나를 평가하고 "왜" 를 함께 돌려준다
+function evalDomainRule(rule, g, actual){
+  const path = g.path;
+  let match=false, why="";
+  switch(rule.type){
+    case K.EXACT:
+      match = rule.pattern === "/" ? (path === "" || path === "/") : (path === rule.pattern);
+      why = `path "${path}" ${match?"==":"!="} "${rule.pattern}"`;
+      break;
+    case K.WILD: {
+      const at = path.indexOf(rule.pattern);
+      match = rule.pattern === "" || at !== -1;
+      why = rule.pattern === "" ? "빈 패턴 → 항상 일치"
+          : `path.find("${rule.pattern}") = ${at===-1?"npos":at}`;
+      break;
+    }
+    case K.PREFIX: {
+      const at = path.indexOf(rule.pattern);
+      match = at === 0;
+      why = `path.find("${rule.pattern}") = ${at===-1?"npos":at} ${match?"== 0":"≠ 0"}`;
+      break;
+    }
+    case K.SPEC: {
+      const at = g.spec.indexOf(rule.pattern);
+      match = rule.pattern === "" || at !== -1;
+      why = rule.pattern === "" ? "빈 패턴 → 항상 일치"
+          : `spec.find("${rule.pattern}") = ${at===-1?"npos":at}`;
+      break;
+    }
+  }
+  if(match && rule.query_kv.length && !matchQueryAND(rule.query_kv, actual)){
+    return { match:false, why: why + " · 쿼리 조건 불일치" };
+  }
+  if(match && rule.query_kv.length) why += " · 쿼리 조건 충족";
+  return { match, why };
+}
+
+function matchUrlParts(rule, g, actual){
+  if(rule.invalid) return { match:false, why:"규칙 파싱 실패 (스킴 없는 URL?)" };
+  if(rule.host && !domainIs(g.host, rule.host))
+    return { match:false, why:`host "${g.host}" ⊄ "${rule.host}"` };
+  if(!isPathUnderPattern(rule.path, g.path))
+    return { match:false, why:`path "${g.path}" 이 "${rule.path}" 하위 아님` };
+  if(rule.query_kv.length && !matchQueryAND(rule.query_kv, actual))
+    return { match:false, why:"쿼리 조건 불일치" };
+  return { match:true, why:`host+path 일치 (rule path "${rule.path}")` };
+}
+
+/* ══════════════ Evaluate ══════════════ */
+
+function evaluate(cfg){
+  const g = gurl(cfg.url);
+  const steps = [];
+  if(!g.valid){
+    return { g, steps, verdict:{ kind:"warn", label:"INVALID URL",
+      meta:"GURL 파싱 실패 — 스킴을 포함한 전체 URL 이어야 합니다." } };
+  }
+  const actual = queryIndex(g);
+
+  const white = buildUrlParts(cfg.white);
+  const black = buildUrlParts(cfg.black);
+  const bmap  = buildDomainMap(cfg.blackmap, false);
+  const umap  = buildDomainMap(cfg.unsup, true);
+
+  /* 1 — external scheme */
+  const schemeHit = BLOCKED_SCHEMES.includes(g.scheme);
+  steps.push({ n:1, title:'IsBlockedExternalScheme()', code:`scheme "${g.scheme}"`,
+    out: schemeHit ? "BLOCK" : "pass", kind: schemeHit ? "deny" : "pass",
+    rows: BLOCKED_SCHEMES.map(s => ({
+      mark: s === g.scheme ? "y" : "n", cells:[s],
+      why: s === g.scheme ? "일치" : "" })) });
+
+  if(schemeHit){
+    return { g, steps, verdict:{ kind:"deny", label:"BLOCKED · unsupported",
+      meta:"NOT_SUPPORT_FUNCTION · net::ERR_ABORTED" } };
+  }
+
+  /* 2 — unsupported map */
+  let unsupHit = null;
+  const urows = [];
+  if(!umap.length){
+    steps.push({ n:2, title:"IsUrlUnsupported()", code:"unsupported_domain_map_ 비어 있음",
+      out:"pass", kind:"pass", rows:[] });
+  } else if(!g.hasHost){
+    for(const e of umap){
+      if(g.scheme === SPOTIFY_SCHEME && g.spec.indexOf(e.host) === 0){ unsupHit = { e }; }
+      urows.push({ mark: unsupHit && unsupHit.e === e ? "y" : "n",
+        cells:[e.host, "(spotify scheme)"],
+        why: g.scheme !== SPOTIFY_SCHEME ? "호스트 없음 + spotify 스킴 아님"
+             : (g.spec.indexOf(e.host) === 0 ? "spec 접두사 일치" : "spec 접두사 불일치") });
+      if(unsupHit) break;
+    }
+    steps.push({ n:2, title:"IsUrlUnsupported()", code:"host 없음 경로",
+      out:unsupHit?"BLOCK":"pass", kind:unsupHit?"deny":"pass", rows:urows });
+  } else {
+    outer:
+    for(const e of umap){
+      if(e.spotify){
+        urows.push({ mark:"n", cells:[e.host,"(spotify scheme)"], why:"host 있는 URL 이라 미적용" });
+        continue;
+      }
+      if(!domainIs(g.host, e.host)){
+        urows.push({ mark:"n", cells:[e.host, "—"], why:`host "${g.host}" ⊄ "${e.host}"` });
+        continue;
+      }
+      for(const r of e.rules){
+        const res = evalDomainRule(r, g, actual);
+        urows.push({ mark: res.match ? "y":"n", cells:[e.host, r.type, r.src], why:res.why });
+        if(res.match){ unsupHit = { e, r }; break outer; }
+      }
+    }
+    steps.push({ n:2, title:"IsUrlUnsupported()", code:"unsupported_domain_map_",
+      out:unsupHit?"BLOCK":"pass", kind:unsupHit?"deny":"pass", rows:urows });
+  }
+
+  if(unsupHit){
+    return { g, steps, verdict:{ kind:"deny", label:"BLOCKED · unsupported",
+      meta:`UNSUPPORTED HIT domain=${unsupHit.e.host} · NOT_SUPPORT_FUNCTION · ERR_ABORTED` } };
+  }
+
+  /* 3 — IsAllowed */
+  if(!black.length && !bmap.length && !white.length){
+    steps.push({ n:3, title:"IsUrlAllowed()", code:"규칙 없음 → default allow",
+      out:"pass", kind:"pass", rows:[] });
+    return { g, steps, verdict:{ kind:"pass", label:"PROCEED", meta:"규칙이 하나도 없어 전부 허용" } };
+  }
+  if(!g.hasHost){
+    steps.push({ n:3, title:"IsUrlAllowed()", code:"URLFILTER BYPASS (no host)",
+      out:"pass", kind:"pass", rows:[] });
+    return { g, steps, verdict:{ kind:"pass", label:"PROCEED", meta:"host 가 없어 우회" } };
+  }
+
+  // 3a black_domain_map_
+  let bmapHit = null; const brows = [];
+  outer2:
+  for(const e of bmap){
+    if(!domainIs(g.host, e.host)){
+      brows.push({ mark:"n", cells:[e.host,"—"], why:`host "${g.host}" ⊄ "${e.host}"` });
+      continue;
+    }
+    for(const r of e.rules){
+      const res = evalDomainRule(r, g, actual);
+      brows.push({ mark: res.match?"y":"n", cells:[e.host, r.type, r.src], why:res.why });
+      if(res.match){ bmapHit = { e, r }; break outer2; }
+    }
+  }
+  steps.push({ n:3, title:"IsUrlAllowed() &rarr; black_domain_map_", code:`${bmap.length} host`,
+    out:bmapHit?"BLOCK":"pass", kind:bmapHit?"deny":"pass", rows:brows });
+  if(bmapHit){
+    return { g, steps, verdict:{ kind:"deny", label:"BLOCKED · disallowed",
+      meta:`BLACKLIST MAP HIT domain=${bmapHit.e.host} · INVALID_URL · ERR_ABORTED` } };
+  }
+
+  // 3b black_list_
+  let blackHit = null; const blrows = [];
+  for(const r of black){
+    const res = matchUrlParts(r, g, actual);
+    blrows.push({ mark: res.match?"y":"n", cells:[r.src], why:res.why });
+    if(res.match){ blackHit = r; break; }
+  }
+  steps.push({ n:4, title:"IsUrlAllowed() &rarr; black_list_", code:`${black.length} rule`,
+    out:blackHit?"BLOCK":"pass", kind:blackHit?"deny":"pass", rows:blrows });
+  if(blackHit){
+    return { g, steps, verdict:{ kind:"deny", label:"BLOCKED · disallowed",
+      meta:`BLACKLIST HIT rule=${blackHit.full_url} · INVALID_URL · ERR_ABORTED` } };
+  }
+
+  // 3c white_list_
+  let whiteHit = null; const wrows = [];
+  for(const r of white){
+    const res = matchUrlParts(r, g, actual);
+    wrows.push({ mark: res.match?"y-ok":"n", cells:[r.src], why:res.why });
+    if(res.match){ whiteHit = r; break; }
+  }
+  steps.push({ n:5, title:"IsUrlAllowed() &rarr; white_list_", code:`${white.length} rule`,
+    out: whiteHit ? "ALLOW" : (white.length ? "BLOCK" : "pass"),
+    kind: whiteHit ? "pass" : (white.length ? "deny" : "pass"), rows:wrows });
+
+  if(whiteHit){
+    return { g, steps, verdict:{ kind:"pass", label:"PROCEED",
+      meta:`WHITELIST HIT rule=${whiteHit.full_url}` } };
+  }
+  if(!white.length){
+    return { g, steps, verdict:{ kind:"pass", label:"PROCEED", meta:"whiteList 가 비어 있어 허용" } };
+  }
+  return { g, steps, verdict:{ kind:"deny", label:"BLOCKED · disallowed",
+    meta:"어떤 whiteList 규칙과도 일치하지 않음 · INVALID_URL · ERR_ABORTED" } };
+}
+
+/* ══════════════ view ══════════════ */
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function readJSON(el){
+  const t = el.value.trim();
+  if(!t) return { ok:true, value:{} };
+  try { const v = JSON.parse(t);
+    if(typeof v !== "object" || Array.isArray(v) || v === null) throw new Error("객체여야 합니다");
+    return { ok:true, value:v };
+  } catch(e){ return { ok:false, error:e.message }; }
+}
+
+function render(){
+  const bm = readJSON($("blackmap"));
+  const um = readJSON($("unsup"));
+  const errs = [];
+  if(!bm.ok) errs.push("blackList(domain map) JSON: " + bm.error);
+  if(!um.ok) errs.push("unSupportedDomainList JSON: " + um.error);
+  if(errs.length){
+    $("verdict").innerHTML = errs.map(e => `<div class="err">${esc(e)}</div>`).join("");
+    $("parsed").innerHTML = ""; $("trace").innerHTML = "";
+    return;
+  }
+
+  const r = evaluate({
+    url: $("url").value.trim(),
+    white: $("white").value.split("\n"),
+    black: $("black").value.split("\n"),
+    blackmap: bm.value,
+    unsup: um.value,
+  });
+
+  $("verdict").innerHTML =
+    `<div class="verdict is-${r.verdict.kind}">
+       <div class="verdict-main">
+         <span class="verdict-label">${esc(r.verdict.label)}</span>
+         <span class="verdict-meta">${esc(r.verdict.meta)}</span>
+       </div>
+     </div>`;
+
+  $("parsed").innerHTML = r.g.valid
+    ? [["scheme",r.g.scheme],["host",r.g.host],["path",r.g.path||'""'],
+       ["query",r.g.query||'""'],["spec",r.g.spec]]
+      .map(([k,v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")
+    : `<dt>input</dt><dd>${esc(r.g.raw||'""')}</dd>`;
+
+  $("trace").innerHTML = r.steps.map(s => {
+    const body = s.rows.length
+      ? `<table class="rules"><tbody>${s.rows.map(row => `
+          <tr class="${row.mark==='y'?'hit':row.mark==='y-ok'?'hit-ok':''}">
+            <td class="mark ${row.mark}">${row.mark==='n'?'·':'✓'}</td>
+            ${row.cells.map(c => `<td>${c===undefined?'':(/^k[A-Z]/.test(c)?`<span class="kind">${esc(c)}</span>`:esc(c))}</td>`).join("")}
+            <td class="why">${esc(row.why||"")}</td>
+          </tr>`).join("")}</tbody></table>`
+      : `<div class="empty">평가할 규칙 없음</div>`;
+    return `<div class="step">
+      <div class="step-head">
+        <span class="step-n">${s.n}</span>
+        <span class="step-title">${s.title} <code>${esc(s.code)}</code></span>
+        <span class="step-out out-${s.kind}">${s.out}</span>
+      </div>${body}</div>`;
+  }).join("");
+}
+
+/* ══════════════ 초기값 ══════════════ */
+
+$("url").value      = "https://www.primevideo.com/-/ko/help?ref_=atv_nb_hp";
+$("white").value    = "https://www.primevideo.com/";
+$("black").value    = "";
+$("blackmap").value = JSON.stringify({"https://www.primevideo.com":["*/help/","/help?"]}, null, 2);
+$("unsup").value    = JSON.stringify({"https://auth.skillshare.com/u/":["/signup/"]}, null, 2);
+
+for(const id of ["url","white","black","blackmap","unsup"])
+  $(id).addEventListener("input", render);
+
+render();
+</script>
+
+</body>
+</html>
