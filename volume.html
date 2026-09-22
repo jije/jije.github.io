@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>웹 오디오 볼륨 조절 테스트</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            text-align: center;
+            margin-top: 100px;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button.stop {
+            background-color: #dc3545;
+        }
+        button.stop:hover {
+            background-color: #a71d2a;
+        }
+        .volume-control {
+            text-align: left;
+            margin-top: 15px;
+        }
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>웹 오디오 볼륨 제어</h2>
+        <p>버튼을 눌러 소리를 켜고, 슬라이더로 볼륨을 조절해보세요.</p>
+        
+        <button id="toggleBtn">소리 재생 시작</button>
+        
+        <div class="volume-control">
+            <label for="volumeRange">볼륨: <span id="volValue">1.0</span></label>
+            <input type="range" id="volumeRange" min="0" max="1" step="0.01" value="1">
+        </div>
+    </div>
+
+    <script>
+        let audioCtx = null;
+        let oscillator = null;
+        let gainNode = null;
+        let isPlaying = false;
+
+        const toggleBtn = document.getElementById('toggleBtn');
+        const volumeRange = document.getElementById('volumeRange');
+        const volValue = document.getElementById('volValue');
+
+        toggleBtn.addEventListener('click', () => {
+            if (!isPlaying) {
+                // 1. 브라우저 정책상 사용자 클릭 이벤트 안에서 AudioContext 생성
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                // 2. 소리 소스 생성 (440Hz 기준음, 부드러운 사인파)
+                oscillator = audioCtx.createOscillator();
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
+
+                // 3. 볼륨 제어를 위한 GainNode 생성
+                gainNode = audioCtx.createGain();
+                gainNode.gain.value = parseFloat(volumeRange.value);
+
+                // 4. 노드 연결: 소스 -> GainNode(볼륨) -> 스피커(Destination)
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                // 5. 재생 시작
+                oscillator.start();
+                isPlaying = true;
+                
+                toggleBtn.textContent = "소리 중지";
+                toggleBtn.classList.add('stop');
+
+            } else {
+                // 재생 중지
+                if (oscillator) {
+                    oscillator.stop();
+                    oscillator.disconnect();
+                }
+                isPlaying = false;
+                
+                toggleBtn.textContent = "소리 재생 시작";
+                toggleBtn.classList.remove('stop');
+            }
+        });
+
+        // 6. 슬라이더를 움직일 때 실시간으로 GainNode의 값 변경
+        volumeRange.addEventListener('input', (event) => {
+            const val = event.target.value;
+            volValue.textContent = val;
+            
+            if (gainNode && audioCtx) {
+                // 노이즈(팝핑 현상) 방지를 위해 부드럽게 값 반영
+                gainNode.gain.setValueAtTime(parseFloat(val), audioCtx.currentTime);
+            }
+        });
+    </script>
+
+</body>
+</html>
