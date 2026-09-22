@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>웹 오디오 볼륨 조절 테스트</title>
+    <title>Audio 태그 + GainNode 볼륨 조절</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -11,35 +11,18 @@
             margin-top: 100px;
         }
         .container {
-            max-width: 400px;
+            max-width: 450px;
             margin: 0 auto;
             background: white;
             padding: 30px;
             border-radius: 12px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-        button {
-            padding: 12px 24px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            margin-bottom: 25px;
-            transition: background 0.2s;
+        audio {
+            width: 100%;
+            margin-bottom: 20px;
         }
-        button:hover {
-            background-color: #0056b3;
-        }
-        button.stop {
-            background-color: #dc3545;
-        }
-        button.stop:hover {
-            background-color: #a71d2a;
-        }
-        .volume-control {
+        .control-group {
             text-align: left;
             margin-top: 15px;
         }
@@ -48,85 +31,85 @@
             cursor: pointer;
             margin-top: 8px;
         }
+        .value-display {
+            font-weight: bold;
+            color: #007bff;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h2>웹 오디오 볼륨 제어</h2>
-        <p>버튼을 눌러 소리를 켜고, 슬라이더로 볼륨을 조절해보세요.</p>
+        <h2>Audio 태그와 GainNode 연동</h2>
+        <p>오디오를 재생하고 변수 기반 슬라이더로 볼륨을 조절해보세요.</p>
         
-        <button id="toggleBtn">소리 재생 시작</button>
+        <!-- 실제 오디오 태그 -->
+        <audio id="myAudio" controls crossorigin="anonymous" src="Mikrokosmos.mp3"></audio>
         
-        <div class="volume-control">
-            <label for="volumeRange">볼륨: <span id="volValue">1.0</span></label>
-            <input type="range" id="volumeRange" min="0" max="1" step="0.01" value="1">
+        <div class="control-group">
+            <label for="volumeRange">볼륨 변수값 (Volume): <span id="volDisplay" class="value-display">0.5</span></label>
+            <input type="range" id="volumeRange" min="0" max="1" step="0.01" value="0.5">
         </div>
     </div>
 
     <script>
-        let audioCtx = null;
-        let oscillator = null;
-        let gainNode = null;
-        let isPlaying = false;
-
-        const toggleBtn = document.getElementById('toggleBtn');
+        const audioElement = document.getElementById('myAudio');
         const volumeRange = document.getElementById('volumeRange');
-        const volValue = document.getElementById('volValue');
+        const volDisplay = document.getElementById('volDisplay');
 
-        toggleBtn.addEventListener('click', () => {
-            if (!isPlaying) {
-                // 1. 브라우저 정책상 사용자 클릭 이벤트 안에서 AudioContext 생성
-                if (!audioCtx) {
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
+        // 1. 볼륨을 제어할 기준 변수 선언
+        let currentVolume = 0.5;
 
-                // 2. 소리 소스 생성 (440Hz 기준음, 부드러운 사인파)
-                oscillator = audioCtx.createOscillator();
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
+        let audioCtx = null;
+        let gainNode = null;
+        let isInitialized = false;
 
-                // 3. 볼륨 제어를 위한 GainNode 생성
+        // 브라우저 정책상 오디오가 재생되거나 사용자가 상호작용할 때 AudioContext 연결 필요
+        audioElement.addEventListener('play', () => {
+            if (!isInitialized) {
+                // AudioContext 생성
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+                // 2. <audio> 태그를 웹 오디오 소스로 변환
+                const sourceNode = audioCtx.createMediaElementSource(audioElement);
+
+                // 3. GainNode(볼륨 조절 노드) 생성
                 gainNode = audioCtx.createGain();
-                gainNode.gain.value = parseFloat(volumeRange.value);
 
-                // 4. 노드 연결: 소스 -> GainNode(볼륨) -> 스피커(Destination)
-                oscillator.connect(gainNode);
+                // 초기 변수값을 GainNode에 반영
+                gainNode.gain.value = currentVolume;
+
+                // 4. 노드 연결: audio 소스 -> GainNode -> 스피커(Destination)
+                sourceNode.connect(gainNode);
                 gainNode.connect(audioCtx.destination);
 
-                // 5. 재생 시작
-                oscillator.start();
-                isPlaying = true;
-                
-                toggleBtn.textContent = "소리 중지";
-                toggleBtn.classList.add('stop');
+                isInitialized = true;
+            }
 
-            } else {
-                // 재생 중지
-                if (oscillator) {
-                    oscillator.stop();
-                    oscillator.disconnect();
-                }
-                isPlaying = false;
-                
-                toggleBtn.textContent = "소리 재생 시작";
-                toggleBtn.classList.remove('stop');
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
             }
         });
 
-        // 6. 슬라이더를 움직일 때 실시간으로 GainNode의 값 변경
-        volumeRange.addEventListener('input', (event) => {
-            const val = event.target.value;
-            volValue.textContent = val;
-            
+        // 5. 변수값을 변경하고 GainNode에 적용하는 함수
+        function updateVolume(newVal) {
+            currentVolume = newVal; // 변수값 업데이트
+            volDisplay.textContent = currentVolume;
+
+            // GainNode가 생성되어 있다면 실시간으로 반영
             if (gainNode && audioCtx) {
-                // 노이즈(팝핑 현상) 방지를 위해 부드럽게 값 반영
-                gainNode.gain.setValueAtTime(parseFloat(val), audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(currentVolume, audioCtx.currentTime);
             }
+        }
+
+        // 슬라이더 조작 시 변수 변경 함수 호출
+        volumeRange.addEventListener('input', (event) => {
+            const value = parseFloat(event.target.value);
+            updateVolume(value);
         });
+
+        // 필요시 코드 내에서 언제든지 변수만 바꿔서 볼륨 조절 가능 (예: 외부 함수 호출 등)
+        // 예: updateVolume(0.2); 로 강제 조절 가능
     </script>
 
 </body>
