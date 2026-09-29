@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Web Audio CORS Test</title>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--line:#273040;--fg:#e6edf3;--dim:#8b949e;
+        --ok:#3fb950;--bad:#f85149;--warn:#d29922;--acc:#58a6ff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+       font:14px/1.5 system-ui,-apple-system,"Noto Sans KR",sans-serif;
+       padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+  h1{font-size:17px;margin:0 0 4px}
+  .sub{color:var(--dim);font-size:12px;margin-bottom:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+        padding:12px 13px;margin-bottom:12px}
+  .card h2{font-size:13px;margin:0 0 9px;color:var(--dim);font-weight:600;
+           letter-spacing:.04em;text-transform:uppercase}
+  label{font-size:12px;color:var(--dim)}
+  input[type=text]{width:100%;background:#0d1117;color:var(--fg);
+       border:1px solid var(--line);border-radius:6px;padding:7px 9px;
+       font:inherit;font-size:12px;margin-top:4px}
+  .row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:9px}
+  button{background:#21262d;color:var(--fg);border:1px solid var(--line);
+         border-radius:6px;padding:7px 12px;font:inherit;font-size:13px;
+         cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button:active{background:#2d333b}
+  button:disabled{color:#484f58;cursor:default}
+  button.on{background:#1f6feb;border-color:#1f6feb}
+  button.play{background:#238636;border-color:#238636;font-weight:600}
+  .seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .seg button{border:0;border-radius:0;border-right:1px solid var(--line)}
+  .seg button:last-child{border-right:0}
+  .step{display:flex;align-items:center;background:#0d1117;
+        border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .step button{border:0;border-radius:0;width:36px;padding:0;height:32px;font-size:17px}
+  .step .val{min-width:52px;text-align:center;font-size:13px;
+             font-variant-numeric:tabular-nums;padding:6px 0;user-select:none;
+             border-left:1px solid var(--line);border-right:1px solid var(--line)}
+  .preset{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .preset button{font-size:12px;padding:5px 9px}
+  audio{width:100%;margin-top:10px}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  td{padding:3px 0;vertical-align:top}
+  td:first-child{color:var(--dim);width:38%;padding-right:8px}
+  .v{font-variant-numeric:tabular-nums}
+  .ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}
+  .meterwrap{margin-top:8px}
+  .meter{height:9px;background:#0d1117;border:1px solid var(--line);
+         border-radius:5px;overflow:hidden}
+  .meter i{display:block;height:100%;width:0;background:var(--ok);
+           transition:width .06s linear}
+  .verdict{margin-top:9px;padding:9px 11px;border-radius:7px;font-size:13px;
+           border:1px solid var(--line);background:#0d1117}
+  #log{margin:0;font:11px/1.6 ui-monospace,Menlo,Consolas,monospace;
+       color:var(--dim);max-height:190px;overflow:auto;white-space:pre-wrap;
+       word-break:break-all}
+  #log b{color:var(--fg);font-weight:400}
+</style>
+</head>
+<body>
+
+<h1>Web Audio · CORS 테스트</h1>
+<div class="sub">같은 음원을 Web Audio 경유 / 미경유로 번갈아 재생해서 차이를 본다.</div>
+
+<div class="card">
+  <h2>음원</h2>
+  <label for="url">URL (상대경로도 가능)</label>
+  <input type="text" id="url" spellcheck="false" autocapitalize="off" autocomplete="off">
+  <div class="preset" id="presets"></div>
+</div>
+
+<div class="card">
+  <h2>설정</h2>
+  <div class="row">
+    <label>Web Audio</label>
+    <div class="seg" id="wa">
+      <button data-v="1" class="on">ON (그래프 경유)</button>
+      <button data-v="0">OFF (직접 출력)</button>
+    </div>
+  </div>
+  <div class="row">
+    <label>crossorigin</label>
+    <div class="seg" id="co">
+      <button data-v="" class="on">없음</button>
+      <button data-v="anonymous">anonymous</button>
+    </div>
+  </div>
+  <div class="row">
+    <label>gain</label>
+    <div class="step">
+      <button id="gm">−</button><span class="val" id="gv">1.0</span><button id="gp">+</button>
+    </div>
+    <span class="v" id="gdb" style="color:var(--dim);font-size:12px"></span>
+  </div>
+  <div class="row">
+    <button class="play" id="play">재생</button>
+    <button id="stop">정지</button>
+    <button id="probe">CORS 헤더만 확인</button>
+  </div>
+  <div id="slot"></div>
+</div>
+
+<div class="card">
+  <h2>측정</h2>
+  <table>
+    <tr><td>재생 경로</td><td id="s-path">—</td></tr>
+    <tr><td>AudioContext</td><td id="s-ctx">—</td></tr>
+    <tr><td>currentTime</td><td class="v" id="s-time">—</td></tr>
+    <tr><td>readyState</td><td id="s-ready">—</td></tr>
+    <tr><td>출력 peak / rms</td><td class="v" id="s-level">—</td></tr>
+  </table>
+  <div class="meterwrap"><div class="meter"><i id="bar"></i></div></div>
+  <div class="verdict" id="verdict">재생을 시작하면 판정이 나옵니다.</div>
+</div>
+
+<div class="card">
+  <h2>로그</h2>
+  <div id="log"></div>
+</div>
+
+<script>
+const PRESETS = [
+  ['로컬 · 라플위클리 (동일 출처)', 'media/rafl_20.mp3'],
+  ['로컬 · 조인섭 (동일 출처)', 'media/join_01.m4a'],
+  ['원격 · 라플위클리 (anchor.fm)', 'https://anchor.fm/s/109729b4c/podcast/play/121689342/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-5-19%2F426436574-44100-2-c17e57e652987.mp3'],
+  ['원격 · 조인섭 (anchor.fm)', 'https://anchor.fm/s/111807bec/podcast/play/125536405/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-8-10%2F431622674-44100-2-655b78bb49aeb.m4a'],
+];
+
+const $ = id => document.getElementById(id);
+const urlBox = $('url'), slot = $('slot'), logBox = $('log');
+
+let useWA = true, coMode = '', gain = 1.0;
+let ctx = null, srcNode = null, gainNode = null, analyser = null, buf = null;
+let au = null, raf = 0, peakSeen = 0, silentFrames = 0, activeFrames = 0;
+
+function log(msg, cls){
+  const t = new Date().toTimeString().slice(0, 8);
+  const line = document.createElement('div');
+  line.innerHTML = t + '  ' + (cls ? '<b class="' + cls + '">' + msg + '</b>' : msg);
+  logBox.appendChild(line);
+  logBox.scrollTop = logBox.scrollHeight;
+}
+
+// ── 프리셋 ──────────────────────────────────────────────────────────
+PRESETS.forEach(([label, u]) => {
+  const b = document.createElement('button');
+  b.textContent = label;
+  b.onclick = () => { urlBox.value = u; log('음원 선택: ' + label); };
+  $('presets').appendChild(b);
+});
+urlBox.value = PRESETS[2][1];   // 원격 음원이 기본. 문제 재현이 목적이므로.
+
+// ── 세그먼트 토글 ───────────────────────────────────────────────────
+function seg(id, cb){
+  $(id).addEventListener('click', ev => {
+    const b = ev.target.closest('button');
+    if (!b) return;
+    [...$(id).children].forEach(x => x.classList.toggle('on', x === b));
+    cb(b.dataset.v);
+  });
+}
+seg('wa', v => { useWA = v === '1'; log('Web Audio ' + (useWA ? 'ON' : 'OFF') + ' — 다음 재생부터 적용'); });
+seg('co', v => { coMode = v; log('crossorigin = "' + (v || '(없음)') + '" — 다음 재생부터 적용'); });
+
+// ── gain 스테퍼 ─────────────────────────────────────────────────────
+function showGain(){
+  $('gv').textContent = gain.toFixed(1);
+  $('gdb').textContent = '× · ' + (20 * Math.log10(gain || 1e-6)).toFixed(2) + ' dB';
+  $('gm').disabled = gain <= 0;
+  $('gp').disabled = gain >= 10;
+}
+function bumpGain(d){
+  gain = Math.min(10, Math.max(0, Math.round((gain + d * 0.1) / 0.1) * 0.1));
+  showGain();
+  if (gainNode) gainNode.gain.value = gain;
+}
+$('gm').onclick = () => bumpGain(-1);
+$('gp').onclick = () => bumpGain(1);
+showGain();
+
+// ── 재생 ────────────────────────────────────────────────────────────
+function teardown(){
+  cancelAnimationFrame(raf); raf = 0;
+  if (au) { au.pause(); au.removeAttribute('src'); au.load(); au.remove(); }
+  au = null; srcNode = null; gainNode = null; analyser = null;
+  peakSeen = 0; silentFrames = 0; activeFrames = 0;
+  $('bar').style.width = '0';
+}
+
+// createMediaElementSource 는 엘리먼트당 한 번뿐이고 되돌릴 수 없다.
+// 그래서 ON/OFF 를 바꿀 때마다 엘리먼트를 통째로 새로 만든다.
+function build(){
+  teardown();
+  au = document.createElement('audio');
+  au.controls = true;
+  au.preload = 'none';
+  if (coMode) au.crossOrigin = coMode;
+  slot.appendChild(au);
+
+  au.addEventListener('loadedmetadata', () => log('loadedmetadata · duration=' + au.duration.toFixed(1) + 's'));
+  au.addEventListener('playing', () => log('playing', 'ok'));
+  au.addEventListener('stalled', () => log('stalled', 'warn'));
+  au.addEventListener('error', () => {
+    const e = au.error;
+    log('error: ' + (e ? (e.message || 'code ' + e.code) : 'unknown'), 'bad');
+    if (coMode) log('crossorigin 을 걸면 서버가 CORS 헤더를 안 줄 때 로드 자체가 실패한다.', 'warn');
+  });
+
+  if (!useWA) { $('s-path').innerHTML = '<span class="ok">엘리먼트 직접 출력</span>'; return; }
+
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) { log('AudioContext 미지원', 'bad'); return; }
+  if (!ctx) { ctx = new AC(); log('AudioContext 생성 · sampleRate=' + ctx.sampleRate); }
+
+  srcNode = ctx.createMediaElementSource(au);
+  gainNode = ctx.createGain();
+  gainNode.gain.value = gain;
+  analyser = ctx.createAnalyser();
+  analyser.fftSize = 2048;
+  buf = new Float32Array(analyser.fftSize);
+  srcNode.connect(gainNode);
+  gainNode.connect(analyser);
+  analyser.connect(ctx.destination);
+  $('s-path').innerHTML = 'source → gain → analyser → destination';
+  log('그래프 구성 완료 (gain ' + gain.toFixed(1) + ')');
+}
+
+function tick(){
+  raf = requestAnimationFrame(tick);
+  if (au) {
+    $('s-time').textContent = au.currentTime.toFixed(2) + ' s';
+    $('s-ready').textContent = au.readyState;
+  }
+  if (ctx) $('s-ctx').textContent = ctx.state;
+  if (!analyser) { $('s-level').textContent = '측정 불가 (그래프 없음)'; return; }
+
+  analyser.getFloatTimeDomainData(buf);
+  let peak = 0, sum = 0;
+  for (let i = 0; i < buf.length; i++) {
+    const v = Math.abs(buf[i]);
+    if (v > peak) peak = v;
+    sum += buf[i] * buf[i];
+  }
+  const rms = Math.sqrt(sum / buf.length);
+  if (peak > peakSeen) peakSeen = peak;
+  $('s-level').textContent = peak.toFixed(4) + ' / ' + rms.toFixed(4);
+  $('bar').style.width = Math.min(100, peak * 100) + '%';
+
+  // 재생이 실제로 진행 중일 때만 센다. 버퍼링 중 무음은 판정에서 제외.
+  if (au && !au.paused && au.currentTime > 0.3) {
+    if (peak < 1e-5) silentFrames++; else activeFrames++;
+    if (silentFrames === 60 && activeFrames === 0) verdictTainted();
+    if (activeFrames === 10) verdictOk();
+  }
+}
+
+function verdictTainted(){
+  $('verdict').innerHTML = '<b class="bad">무음 — 그래프가 오염(tainted)되었습니다.</b><br>' +
+    '재생은 진행되는데 출력 샘플이 전부 0입니다. 교차 출처 음원에 CORS 승인이 없어 ' +
+    'Web Audio 가 무음을 내보내는 상태입니다. 같은 음원을 Web Audio OFF 로 재생하면 소리가 납니다.';
+  log('판정: 오염 — 1초 이상 샘플이 전부 0', 'bad');
+}
+function verdictOk(){
+  $('verdict').innerHTML = '<b class="ok">정상 — 그래프로 오디오가 흐르고 있습니다.</b><br>' +
+    'peak 최대 ' + peakSeen.toFixed(4) + '. gain 을 바꾸면 이 값이 따라 움직입니다.';
+  log('판정: 정상 — 그래프에 신호 있음', 'ok');
+}
+
+$('play').onclick = async () => {
+  const u = urlBox.value.trim();
+  if (!u) { log('URL 이 비어 있다', 'bad'); return; }
+  $('verdict').textContent = '측정 중…';
+  build();
+  au.src = u;
+  log('재생 시작 · WebAudio=' + (useWA ? 'ON' : 'OFF') + ' · crossorigin="' + (coMode || '없음') + '"');
+  if (ctx && ctx.state === 'suspended') { try { await ctx.resume(); } catch(e){} }
+  try { await au.play(); } catch (e) { log('play() 거부: ' + e.message, 'bad'); }
+  if (!raf) tick();
+};
+
+$('stop').onclick = () => { teardown(); log('정지'); $('s-path').textContent = '—'; };
+
+// ── CORS 헤더 확인 ──────────────────────────────────────────────────
+$('probe').onclick = async () => {
+  const u = urlBox.value.trim();
+  if (!u) return;
+  log('CORS 확인 중… ' + u.slice(0, 70) + (u.length > 70 ? '…' : ''));
+  // 상대경로는 항상 동일 출처다.
+  if (!/^https?:\/\//i.test(u) || new URL(u, location.href).origin === location.origin) {
+    log('동일 출처 — CORS 제약 없음. Web Audio 사용 가능.', 'ok');
+    return;
+  }
+  try {
+    // 실패가 곧 답이다. ACAO 가 없으면 여기서 TypeError 가 난다.
+    await fetch(u, {method: 'GET', mode: 'cors', headers: {Range: 'bytes=0-1'}});
+    log('CORS 허용됨 — Access-Control-Allow-Origin 이 내려온다. Web Audio 사용 가능.', 'ok');
+  } catch (e) {
+    log('CORS 차단 — Access-Control-Allow-Origin 없음. Web Audio 를 쓰면 무음이 된다.', 'bad');
+    try {
+      await fetch(u, {method: 'GET', mode: 'no-cors'});
+      log('(참고) no-cors 요청은 통과 — 파일 자체는 접근 가능. 헤더만 없는 것.', 'warn');
+    } catch (e2) {
+      log('(참고) no-cors 요청도 실패 — 네트워크나 URL 문제일 수 있다.', 'warn');
+    }
+  }
+};
+
+log('준비 완료. 원격 음원 + Web Audio ON 이 기본값이다.');
+</script>
+</body>
+</html>
