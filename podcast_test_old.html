@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Podcast Gain Test</title>
+<style>
+  :root{ --bg:#14171c; --panel:#1d222a; --line:#2c333d; --fg:#e8ecf2; --dim:#8b95a5;
+         --hi:#4da3ff; --ok:#3ddc97; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+       font:14px/1.5 system-ui,-apple-system,"Noto Sans KR",sans-serif;
+       padding:14px 14px 104px}
+  h1{font-size:18px;margin:0 0 4px}
+  .sub{color:var(--dim);font-size:12.5px;margin:0 0 14px}
+  .wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:760px){.wrap{grid-template-columns:1fr}}
+  .feed{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .fh{padding:11px 13px;border-bottom:1px solid var(--line)}
+  .fh h2{font-size:15px;margin:0 0 6px}
+  .meta{color:var(--dim);font-size:12px}
+  .g{display:flex;align-items:center;gap:8px;margin-top:8px}
+  .g label{font-size:12px;color:var(--dim)}
+  /* 값은 표시 전용. input 이 아니라 네이티브 키보드가 뜨지 않는다. */
+  .step{display:flex;align-items:center;background:#12161c;
+        border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .step button{width:34px;height:30px;background:none;border:0;color:var(--fg);
+               font:inherit;font-size:17px;line-height:1;cursor:pointer;
+               -webkit-tap-highlight-color:transparent;touch-action:manipulation}
+  .step button:active{background:#1d2530}
+  .step button:disabled{color:#3a434f;cursor:default}
+  .step .val{min-width:46px;text-align:center;font-size:13px;
+             font-variant-numeric:tabular-nums;
+             border-left:1px solid var(--line);border-right:1px solid var(--line);
+             padding:5px 0;user-select:none}
+  .g .db{font-size:12px;color:var(--dim)}
+  ul{list-style:none;margin:0;padding:0;max-height:52vh;overflow:auto}
+  li{padding:9px 13px;border-bottom:1px solid var(--line);cursor:pointer}
+  li:last-child{border-bottom:0}
+  li:hover{background:#242b35}
+  li.on{background:#1b3047;box-shadow:inset 3px 0 0 var(--hi)}
+  li b{display:block;font-weight:500;font-size:13px}
+  li span{color:var(--dim);font-size:11.5px}
+  .player{position:fixed;left:0;right:0;bottom:0;background:var(--panel);
+          border-top:1px solid var(--line);padding:9px 14px}
+  .now{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}
+  .now b{font-size:13px}
+  .now span{color:var(--dim);font-size:12px}
+  audio{width:100%;height:34px}
+</style>
+</head>
+<body>
+  <h1>Podcast Gain Test</h1>
+  <p class="sub">에피소드를 고르면 해당 피드의 <code>gainNode.gain</code> 이 바로 적용됩니다.</p>
+  <div class="wrap" id="wrap"></div>
+
+  <div class="player">
+    <div class="now"><b id="nt">에피소드를 선택하세요</b><span id="nf">—</span></div>
+    <audio id="au" controls preload="none"></audio>
+  </div>
+
+<script>
+const FEEDS = [{"id": "109729b4c", "label": "라플위클리 TALK", "eps": [{"title": "라플위클리 S6 29화 | 성장물", "url": "https://anchor.fm/s/109729b4c/podcast/play/125911879/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-8-18%2F432147690-44100-2-5ba601c66a599.mp3", "dur": "00:46:56", "date": "Fri, 18 Sep 2026"}, {"title": "라플위클리 S6 28화 | PLUS MOVIE & ART CLASS", "url": "https://anchor.fm/s/109729b4c/podcast/play/125570148/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-8-11%2F431666118-44100-2-8087025cecc5b.mp3", "dur": "01:25:28", "date": "Fri, 11 Sep 2026"}, {"title": "라플위클리 S6 27화 | 오디세이", "url": "https://anchor.fm/s/109729b4c/podcast/play/123887460/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-7-7%2F429387095-44100-2-9d4d586531326.mp3", "dur": "01:06:12", "date": "Fri, 07 Aug 2026"}, {"title": "라플위클리 S6 26화 | 스파이더맨", "url": "https://anchor.fm/s/109729b4c/podcast/play/123558582/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-6-31%2F428938662-44100-2-27f1e756771b9.mp3", "dur": "00:51:11", "date": "Fri, 31 Jul 2026"}, {"title": "라플위클리 S6 25화 | 고민상담 분식점", "url": "https://anchor.fm/s/109729b4c/podcast/play/123210077/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-6-23%2F428468059-44100-2-ac01a2bb7c6a.mp3", "dur": "01:02:10", "date": "Fri, 24 Jul 2026"}, {"title": "라플위클리 S6 24화 | 티모시 샬라메", "url": "https://anchor.fm/s/109729b4c/podcast/play/122910548/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-6-16%2F428060481-44100-2-6b2595331bbeb.mp3", "dur": "00:56:04", "date": "Fri, 17 Jul 2026"}, {"title": "라플위클리 S6 23화 | 귀신", "url": "https://anchor.fm/s/109729b4c/podcast/play/122631225/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-6-10%2F427686160-44100-2-02321a2fa77fa.mp3", "dur": "00:51:09", "date": "Fri, 10 Jul 2026"}, {"title": "라플위클리 S6 22화 | 시선", "url": "https://anchor.fm/s/109729b4c/podcast/play/122281770/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-6-3%2F427267979-44100-2-148f32d5a9ef7.mp3", "dur": "00:58:24", "date": "Fri, 03 Jul 2026"}, {"title": "라플위클리 S6 21화 | 뮤지컬 2부", "url": "https://anchor.fm/s/109729b4c/podcast/play/121967711/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-5-25%2F426795643-44100-2-d77799d52475.mp3", "dur": "00:45:34", "date": "Fri, 26 Jun 2026"}, {"title": "라플위클리 S6 20화 | 뮤지컬 1부", "url": "https://anchor.fm/s/109729b4c/podcast/play/121689342/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-5-19%2F426436574-44100-2-c17e57e652987.mp3", "dur": "00:44:51", "date": "Fri, 19 Jun 2026"}, {"title": "라플위클리 S6 19화 | 스티븐 스필버그", "url": "https://anchor.fm/s/109729b4c/podcast/play/120365500/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-5-12%2F425988531-44100-2-37d18eded60ca.mp3", "dur": "01:05:04", "date": "Fri, 12 Jun 2026"}, {"title": "라플위클리 S6 18화 | 프랑스", "url": "https://anchor.fm/s/109729b4c/podcast/play/121003814/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-5-5%2F425556816-44100-2-6f5a1c1bdff47.mp3", "dur": "00:54:35", "date": "Fri, 05 Jun 2026"}]}, {"id": "111807bec", "label": "조인섭 변호사의 상담", "eps": [{"title": "\"반듯했던 남편이\"…경증 치매 뒤 '로맨스 스캠'에 재산이 줄줄", "url": "https://anchor.fm/s/111807bec/podcast/play/126083272/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-8-21%2F432360927-44100-2-2a731f5264169.m4a", "dur": "00:09:02", "date": "Mon, 21 Sep 2026"}, {"title": "만날 때마다 30만 원 송금한 남편…상대는 '노래방 도우미'", "url": "https://anchor.fm/s/111807bec/podcast/play/126034462/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-8-20%2F432296337-44100-2-2d2b9e1c90ad.m4a", "dur": "00:08:33", "date": "Sun, 20 Sep 2026"}, {"title": "아빠한테 '아저씨'라 부르던 새어머니 딸…돌연 \"재산 셋이서 나누자\"", "url": "https://anchor.fm/s/111807bec/podcast/play/125875604/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-8-17%2F432086970-44100-2-7001115f6fe77.m4a", "dur": "00:08:30", "date": "Thu, 17 Sep 2026"}, {"title": "\"용서했으니 이혼 못 해\"…같은 여자와 또 바람난 남편의 '적반하장'", "url": "https://anchor.fm/s/111807bec/podcast/play/125831517/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-8-16%2F432025279-44100-2-101df4e96d36b.m4a", "dur": "00:08:00", "date": "Wed, 16 Sep 2026"}, {"title": "연락 없이 불쑥 찾아오는 시어머니…비밀번호 바꿨더니 남편 행동 '충격'", "url": "https://anchor.fm/s/111807bec/podcast/play/125770016/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-8-15%2F431938162-44100-2-4a9d812008e3f.m4a", "dur": "00:09:10", "date": "Tue, 15 Sep 2026"}, {"title": "\"감히 경제권을 넘봐?\"…월급 다 바치고 용돈 30만원 받은 아내, 통장 열자 '경악'", "url": "https://anchor.fm/s/111807bec/podcast/play/125722681/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-8-14%2F431872471-44100-2-adc37e852469b.m4a", "dur": "00:09:15", "date": "Mon, 14 Sep 2026"}, {"title": "\"술 취한 트레이너 바래다준 것뿐\"...헬스로 살 뺀 남편 주차기록 '충격'", "url": "https://anchor.fm/s/111807bec/podcast/play/125671935/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-8-13%2F431803510-44100-2-57c7c20bd2b45.m4a", "dur": "00:09:56", "date": "Sun, 13 Sep 2026"}, {"title": "\"학력도 집안도 다 거짓\" 비행기서 만난 '성공한 사업가' 남편, 알고 보니", "url": "https://anchor.fm/s/111807bec/podcast/play/125536405/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-8-10%2F431622674-44100-2-655b78bb49aeb.m4a", "dur": "00:07:30", "date": "Thu, 10 Sep 2026"}, {"title": "\"무릎 꿇고 반성문 써라\"…장모 강요에 이혼 결심한 남편 '분노'", "url": "https://anchor.fm/s/111807bec/podcast/play/125461007/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-8-9%2F431523930-44100-2-6d0d56ac20666.m4a", "dur": "00:09:39", "date": "Wed, 09 Sep 2026"}, {"title": "\"양육비 깎아주면 성 바꿔줄게\"…전남편 재혼 상대의 '충격' 정체", "url": "https://anchor.fm/s/111807bec/podcast/play/125410238/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-8-8%2F431458688-44100-2-d678db5a2c4cd.m4a", "dur": "00:09:04", "date": "Tue, 08 Sep 2026"}, {"title": "\"이미 20억 챙긴 형, 30% 더 달라\"…아버지 떠난 뒤 '유산전쟁'", "url": "https://anchor.fm/s/111807bec/podcast/play/125332104/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-8-7%2F431359172-44100-2-142b595e0684d.m4a", "dur": "00:09:06", "date": "Mon, 07 Sep 2026"}, {"title": "욕설에 물건까지 던진 아내…25년 견딘 남편에 \"연금도 내놔\"", "url": "https://anchor.fm/s/111807bec/podcast/play/125290092/https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2026-8-6%2F431301265-44100-2-ba320d6cff013.m4a", "dur": "00:08:36", "date": "Sun, 06 Sep 2026"}]}];
+const M = {"109729b4c":{lufs:-13.02, peak:0.05}, "111807bec":{lufs:-26.83, peak:-9.51}};
+
+// 피드별 선형 gain. 라플위클리를 1로 두고, 조인섭을 LUFS 차이만큼 올린다.
+//   10^((-13.02 - (-26.83)) / 20) = 10^(13.81/20) = 4.90
+const GAIN = {
+  "109729b4c": 1.00,   // 라플위클리 (기준)
+  "111807bec": 4.90,   // 조인섭 변호사
+};
+
+const au = document.getElementById('au');
+let cur = null;
+
+// element -> gain -> destination.
+// createMediaElementSource 는 엘리먼트당 한 번만 호출할 수 있어 캐시한다.
+let ctx = null, srcNode = null, gainNode = null, waErr = '';
+function ensureAudio(){
+  if (gainNode || waErr) return !!gainNode;
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) { waErr = 'AudioContext 미지원'; return false; }
+    ctx      = new AC();
+    srcNode  = ctx.createMediaElementSource(au);
+    gainNode = ctx.createGain();
+    srcNode.connect(gainNode);
+    gainNode.connect(ctx.destination);
+  } catch (e) { waErr = String((e && e.message) || e); }
+  return !!gainNode;
+}
+
+function applyGain(fid){
+  const g = GAIN[fid] ?? 1;
+  if (!ensureAudio()) return 'WebAudio 실패: ' + waErr;
+
+  // 먼저 즉시 반영. context 가 suspended 면 currentTime 이 멈춰 있어
+  // setTargetAtTime 스케줄이 먹지 않고 기본값 1 로 재생돼 버린다.
+  gainNode.gain.value = g;
+
+  if (ctx.state === 'suspended') {
+    // resume 은 비동기라 끝난 뒤 한 번 더 확정해 준다.
+    ctx.resume().then(() => { gainNode.gain.value = g; }).catch(()=>{});
+  } else {
+    try { gainNode.gain.cancelScheduledValues(ctx.currentTime); } catch(e){}
+    gainNode.gain.setTargetAtTime(g, ctx.currentTime, 0.01);
+  }
+
+  const db = 20 * Math.log10(g);
+  return `gain ${g.toFixed(2)} (${db >= 0 ? '+' : ''}${db.toFixed(2)} dB) · ctx ${ctx.state}`;
+}
+
+function render(){
+  document.getElementById('wrap').innerHTML = FEEDS.map(f => {
+    const m = M[f.id] || {lufs:0, peak:0}, g = GAIN[f.id] ?? 1;
+    return `<div class="feed">
+      <div class="fh">
+        <h2>${f.label}</h2>
+        <div class="meta">${m.lufs} LUFS · peak ${m.peak} dBFS</div>
+        <div class="g">
+          <label>gain</label>
+          <div class="step" data-gain="${f.id}">
+            <button type="button" data-d="-1" aria-label="gain 감소">−</button>
+            <span class="val">${g.toFixed(1)}</span>
+            <button type="button" data-d="1" aria-label="gain 증가">+</button>
+          </div>
+          <span class="db">×  ·  ${(20*Math.log10(g)).toFixed(2)} dB</span>
+        </div>
+      </div>
+      <ul>${f.eps.map((e,i)=>`<li data-f="${f.id}" data-i="${i}">
+        <b>${e.title}</b><span>${e.date} · ${e.dur}</span></li>`).join('')}</ul>
+    </div>`;
+  }).join('');
+  if (cur) document.querySelector(`li[data-f="${cur.fid}"][data-i="${cur.idx}"]`)?.classList.add('on');
+}
+render();
+
+function play(fid, idx){
+  const f = FEEDS.find(x => x.id === fid), e = f.eps[idx];
+  document.querySelectorAll('li').forEach(l => l.classList.remove('on'));
+  document.querySelector(`li[data-f="${fid}"][data-i="${idx}"]`)?.classList.add('on');
+  cur = {fid, idx};
+  document.getElementById('nt').textContent = e.title;
+  au.src = e.url;
+  const how = applyGain(fid);
+  document.getElementById('nf').textContent = `${f.label} · ${M[fid].lufs} LUFS · ${how}`;
+  au.play().catch(err => console.warn('play failed', err));
+}
+
+document.addEventListener('click', ev => {
+  const li = ev.target.closest('li[data-f]');
+  if (li) play(li.dataset.f, +li.dataset.i);
+});
+
+const STEP = 0.1, GAIN_MIN = 0, GAIN_MAX = 10;   // 10 = 렌더러의 kMaxWebAudioGain
+
+function syncStep(box){
+  const id = box.dataset.gain, g = GAIN[id] ?? 1;
+  box.querySelector('.val').textContent = g.toFixed(1);
+  box.querySelector('[data-d="-1"]').disabled = g <= GAIN_MIN + 1e-9;
+  box.querySelector('[data-d="1"]').disabled = g >= GAIN_MAX - 1e-9;
+  box.closest('.feed').querySelector('.db').textContent =
+    `×  ·  ${(20*Math.log10(g || 1e-6)).toFixed(2)} dB`;
+}
+
+document.querySelectorAll('.step').forEach(syncStep);
+
+document.addEventListener('click', ev => {
+  const btn = ev.target.closest('.step button');
+  if (!btn || btn.disabled) return;
+  const box = btn.closest('.step'), id = box.dataset.gain;
+  // 0.1 격자에 맞춰 반올림. 부동소수 누적으로 4.8999999 가 되는 걸 막는다.
+  const next = Math.round(((GAIN[id] ?? 1) + (+btn.dataset.d) * STEP) / STEP) * STEP;
+  GAIN[id] = Math.min(GAIN_MAX, Math.max(GAIN_MIN, next));
+  syncStep(box);
+  if (cur && cur.fid === id) {
+    const f = FEEDS.find(x => x.id === id);
+    document.getElementById('nf').textContent =
+      `${f.label} · ${M[id].lufs} LUFS · ${applyGain(id)}`;
+  }
+});
+
+au.addEventListener('playing', () => {
+  if (cur && gainNode) gainNode.gain.value = GAIN[cur.fid] ?? 1;
+});
+
+au.addEventListener('error', () => {
+  const e = au.error;
+  document.getElementById('nf').textContent =
+    '재생 실패: ' + (e ? (e.message || 'code ' + e.code) : 'unknown');
+});
+</script>
+</body>
+</html>
